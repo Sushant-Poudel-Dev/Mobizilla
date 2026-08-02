@@ -1,5 +1,6 @@
-import { getInvoiceById, getPaymentMethods } from "@/src/features/invoices/queries";
-import { addPaymentAction } from "@/src/features/invoices/actions";
+import { getInvoiceById } from "@/src/features/invoices/queries";
+import { getPaymentMethods } from "@/src/features/payments/queries";
+import { recordPaymentAction } from "@/src/features/payments/actions";
 import { notFound } from "next/navigation";
 
 export default async function InvoiceDetailPage({
@@ -211,7 +212,7 @@ export default async function InvoiceDetailPage({
           )}
 
           {canCreatePayment && balanceDue > 0 && (
-            <form action={addPaymentAction} className="payment-form" style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
+            <form action={recordPaymentAction} className="payment-form" style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
               <input type="hidden" name="invoiceId" value={invoice.id} />
               <h3 className="repair-form-title">Record Payment</h3>
               <div className="form-row">
