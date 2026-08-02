@@ -518,3 +518,158 @@ export async function getConditionsForRepair(): Promise<{ id: string; name: stri
 
   return data ?? [];
 }
+
+export type InventoryReservation = {
+  id: string;
+  organization_id: string;
+  branch_id: string;
+  inventory_stock_id: string;
+  repair_ticket_id: string;
+  reservation_date: string;
+  reserved_quantity: number;
+  status_id: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  inventory_stock?: {
+    id: string;
+    inventory_item_id: string;
+    condition_id: string;
+    current_quantity: number;
+    reserved_quantity: number;
+    inventory_item?: { part_name: string; part_code: string | null };
+    condition?: { name: string };
+  };
+  status?: { id: string; name: string };
+};
+
+export async function reserveStock(
+  repairTicketId: string,
+  inventoryStockId: string,
+  quantity: number,
+  statusId: string
+): Promise<InventoryReservation | null> {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    return null;
+  }
+
+  const supabase = await createClient();
+
+  // Check available stock
+  const { data: stock, error: stockError } = await supabase
+    .from("inventory_stock")
+    .select("current_quantity, reserved_quantity")
+    .eq("id", inventoryStockId)
+    .eq("organization_id", appUser.organization_id)
+    .single();
+
+  if (stockError || !stock) {
+    console.error("Error fetching stock:", stockError);
+    return null;
+  }
+
+  const available = stock.current_quantity - stock.reserved_quantity;
+  if (available < quantity) {
+    console.error("Insufficient stock for reservation");
+    return null;
+  }
+
+  // Create reservation
+  const { data, error } = await supabase
+    .from("inventory_reservations")
+    .insert({
+      repair_ticket_id: repairTicketId,
+      inventory_stock_id: inventoryStockId,
+      reserved_quantity: quantity,
+      status_id: statusId,
+      reservation_date: new Date().toISOString().split("T")[0],
+      organization_id: appUser.organization_id,
+      branch_id: appUser.branch_id || "",
+    })
+    .select(`
+      *,
+      inventory_stock:inventory_stock(
+        id,
+        inventory_item_id,
+        condition_id,
+        current_quantity,
+        reserved_quantity,
+        inventory_item:inventory_items(part_name, part_code),
+        condition:conditions(name)
+      ),
+      status:reservation_statuses(id, name)
+    `)
+    .single();
+
+  if (error) {
+    console.error("Error creating reservation:", error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function releaseReservation(
+  reservationId: string,
+  newStatusId: string
+): Promise<InventoryReservation | null> {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    return null;
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("inventory_reservations")
+    .update({ status_id: newStatusId })
+    .eq("id", reservationId)
+    .eq("organization_id", appUser.organization_id)
+    .select(`
+      *,
+      inventory_stock:inventory_stock(
+        id,
+        inventory_item_id,
+        condition_id,
+        current_quantity,
+        reserved_quantity,
+        inventory_item:inventory_items(part_name, part_code),
+        condition:conditions(name)
+      ),
+      status:reservation_statuses(id, name)
+    `)
+    .single();
+
+  if (error) {
+    console.error("Error releasing reservation:", error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getReservationStatuses(): Promise<{ id: string; name: string }[]> {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    return [];
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("reservation_statuses")
+    .select("id, name")
+    .is("deleted_at", null)
+    .order("name", { ascending: true });
+
+  if (error) {
+    console.error("Error fetching reservation statuses:", error);
+    return [];
+  }
+
+  return data ?? [];
+}

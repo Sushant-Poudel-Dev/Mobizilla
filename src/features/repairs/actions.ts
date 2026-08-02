@@ -7,6 +7,8 @@ import {
   assignTechnician,
   addRepairPart,
   addRepairService,
+  reserveStock,
+  releaseReservation,
 } from "@/src/features/repairs/queries";
 import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 
@@ -128,7 +130,68 @@ export async function addRepairPartAction(formData: FormData) {
     redirect("/dashboard/repairs?error=" + encodeURIComponent("Failed to add repair part."));
   }
 
+redirect(`/dashboard/repairs/${repairTicketId}?success=1`);
+}
+
+export async function reserveStockAction(formData: FormData) {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    redirect("/login");
+  }
+
+  if (appUser.role !== "owner" && appUser.role !== "admin" && appUser.role !== "technician" && appUser.role !== "front_desk") {
+    redirect("/dashboard/repairs?error=" + encodeURIComponent("Insufficient permissions to reserve stock."));
+  }
+
+  const repairTicketId = formData.get("repairTicketId") as string;
+  const inventoryStockId = formData.get("inventoryStockId") as string;
+  const quantity = formData.get("quantity") as string;
+  const statusId = formData.get("statusId") as string;
+
+  if (!repairTicketId || !inventoryStockId || !quantity || !statusId) {
+    redirect("/dashboard/repairs?error=" + encodeURIComponent("All fields are required."));
+  }
+
+  const result = await reserveStock(
+    repairTicketId,
+    inventoryStockId,
+    Number(quantity),
+    statusId
+  );
+
+  if (!result) {
+    redirect("/dashboard/repairs?error=" + encodeURIComponent("Failed to reserve stock. Check available quantity."));
+  }
+
   redirect(`/dashboard/repairs/${repairTicketId}?success=1`);
+}
+
+export async function releaseReservationAction(formData: FormData) {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    redirect("/login");
+  }
+
+  if (appUser.role !== "owner" && appUser.role !== "admin" && appUser.role !== "technician" && appUser.role !== "front_desk") {
+    redirect("/dashboard/repairs?error=" + encodeURIComponent("Insufficient permissions to release reservation."));
+  }
+
+  const reservationId = formData.get("reservationId") as string;
+  const statusId = formData.get("statusId") as string;
+
+  if (!reservationId || !statusId) {
+    redirect("/dashboard/repairs?error=" + encodeURIComponent("All fields are required."));
+  }
+
+  const result = await releaseReservation(reservationId, statusId);
+
+  if (!result) {
+    redirect("/dashboard/repairs?error=" + encodeURIComponent("Failed to release reservation."));
+  }
+
+  redirect(`/dashboard/repairs?success=1`);
 }
 
 export async function addRepairServiceAction(formData: FormData) {
