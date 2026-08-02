@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createInventoryItem, updateInventoryItem } from "@/src/features/inventory/queries";
+import { createInventoryItem, updateInventoryItem, linkCompatibility, unlinkCompatibility } from "@/src/features/inventory/queries";
 import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 
 export async function createInventoryItemAction(formData: FormData) {
@@ -44,7 +44,61 @@ export async function createInventoryItemAction(formData: FormData) {
     redirect("/dashboard/inventory/new?error=" + encodeURIComponent("Failed to create inventory item."));
   }
 
-  redirect("/dashboard/inventory?success=1");
+redirect("/dashboard/inventory?success=1");
+}
+
+export async function linkCompatibilityAction(formData: FormData) {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    redirect("/login");
+  }
+
+  if (appUser.role !== "owner" && appUser.role !== "admin") {
+    redirect("/dashboard/inventory?error=" + encodeURIComponent("Insufficient permissions."));
+  }
+
+  const inventoryItemId = formData.get("inventoryItemId") as string;
+  const deviceModelId = formData.get("deviceModelId") as string;
+
+  if (!inventoryItemId || !deviceModelId) {
+    redirect("/dashboard/inventory?error=" + encodeURIComponent("Missing required fields."));
+  }
+
+  const result = await linkCompatibility(inventoryItemId, deviceModelId);
+
+  if (!result) {
+    redirect("/dashboard/inventory?error=" + encodeURIComponent("Failed to link compatibility."));
+  }
+
+  redirect(`/dashboard/inventory/${inventoryItemId}?success=1`);
+}
+
+export async function unlinkCompatibilityAction(formData: FormData) {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    redirect("/login");
+  }
+
+  if (appUser.role !== "owner" && appUser.role !== "admin") {
+    redirect("/dashboard/inventory?error=" + encodeURIComponent("Insufficient permissions."));
+  }
+
+  const inventoryItemId = formData.get("inventoryItemId") as string;
+  const deviceModelId = formData.get("deviceModelId") as string;
+
+  if (!inventoryItemId || !deviceModelId) {
+    redirect("/dashboard/inventory?error=" + encodeURIComponent("Missing required fields."));
+  }
+
+  const success = await unlinkCompatibility(inventoryItemId, deviceModelId);
+
+  if (!success) {
+    redirect("/dashboard/inventory?error=" + encodeURIComponent("Failed to unlink compatibility."));
+  }
+
+  redirect(`/dashboard/inventory/${inventoryItemId}?success=1`);
 }
 
 export async function updateInventoryItemAction(formData: FormData) {
