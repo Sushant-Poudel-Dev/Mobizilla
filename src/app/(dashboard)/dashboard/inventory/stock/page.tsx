@@ -1,17 +1,30 @@
 import { getStockByBranch } from "@/src/features/inventory/queries";
+import { createStockAdjustmentAction } from "@/src/features/inventory/actions";
 import { redirect } from "next/navigation";
+
+const adjustmentTypes = [
+  { value: "increase", label: "Increase" },
+  { value: "decrease", label: "Decrease" },
+  { value: "correction", label: "Correction" },
+  { value: "damage", label: "Damage" },
+  { value: "loss", label: "Loss" },
+  { value: "return_to_supplier", label: "Return to Supplier" },
+] as const;
 
 export default async function StockPage({
   searchParams,
 }: {
-  searchParams: Promise<{ branchId?: string }>;
+  searchParams: Promise<{ branchId?: string; error?: string; success?: string }>;
 }) {
-  const { branchId } = await searchParams;
+  const { branchId, error, success } = await searchParams;
   const stock = await getStockByBranch(branchId);
 
   if (stock === null) {
     redirect("/login");
   }
+
+  const appUser = await getCurrentAppUser();
+  const canAdjust = appUser?.role === "owner" || appUser?.role === "admin";
 
   return (
     <main className="dashboard-content">
@@ -20,7 +33,24 @@ export default async function StockPage({
           <h1>Stock Levels</h1>
           <p>Read-only view of inventory stock by branch</p>
         </div>
+        {canAdjust && (
+          <p className="muted" style={{ fontSize: "0.875rem" }}>
+            Admins/Owners can create stock adjustments using the action buttons below.
+          </p>
+        )}
       </header>
+
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="success-message" role="status">
+          Stock adjustment recorded successfully.
+        </div>
+      )}
 
       <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr" }}>
         <article className="dashboard-card">
@@ -52,6 +82,7 @@ export default async function StockPage({
                     <th>Available</th>
                     <th>Min / Max</th>
                     <th>Location</th>
+                    {canAdjust && <th>Adjust</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -75,6 +106,40 @@ export default async function StockPage({
                           {record.min_stock_level} / {record.max_stock_level ?? "—"}
                         </td>
                         <td>{record.location_note ?? "—"}</td>
+                        {canAdjust && (
+                          <td>
+                            <form action={createStockAdjustmentAction} className="adjust-form">
+                              <input type="hidden" name="inventoryStockId" value={record.id} />
+                              <input type="hidden" name="adjustmentDate" value={new Date().toISOString().split("T")[0]} />
+                              <div className="adjust-form-row">
+                                <select name="adjustmentType" required className="form-input form-select adjust-select">
+                                  <option value="">Type</option>
+                                  {adjustmentTypes.map((t) => (
+                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                  ))}
+                                </select>
+                                <input
+                                  name="adjustmentQuantity"
+                                  type="number"
+                                  min="1"
+                                  required
+                                  className="form-input adjust-input"
+                                  placeholder="Qty"
+                                />
+                                <input
+                                  name="reason"
+                                  type="text"
+                                  className="form-input adjust-input"
+                                  placeholder="Reason"
+                                />
+                                <button type="submit" className="btn btn-primary btn-sm adjust-btn">
+                                  Adjust
+                                </button>
+                              </div>
+                              <input type="hidden" name="remarks" value="" />
+                            </form>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -86,4 +151,9 @@ export default async function StockPage({
       </section>
     </main>
   );
+}
+
+async function getCurrentAppUser() {
+  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
+  return getCurrentAppUser();
 }
