@@ -438,3 +438,48 @@ export async function unlinkCompatibility(inventoryItemId: string, deviceModelId
 
   return true;
 }
+
+export type StockAdjustment = {
+  id: string;
+  organization_id: string;
+  branch_id: string;
+  inventory_stock_id: string;
+  adjustment_type: "increase" | "decrease" | "correction" | "damage" | "loss" | "return_to_supplier";
+  adjustment_quantity: number;
+  adjustment_date: string;
+  reason: string | null;
+  remarks: string | null;
+  performed_by_user_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+
+export type StockAdjustmentInsert = Omit<StockAdjustment, "id" | "created_at" | "updated_at" | "deleted_at">;
+
+export async function createStockAdjustment(adjustment: StockAdjustmentInsert): Promise<StockAdjustment | null> {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    return null;
+  }
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("stock_adjustments")
+    .insert({
+      ...adjustment,
+      organization_id: appUser.organization_id,
+      performed_by_user_id: appUser.id,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating stock adjustment:", error);
+    return null;
+  }
+
+  return data;
+}
