@@ -1,5 +1,5 @@
-import { getInventoryItemById, getCategories, getBrands, getConditions } from "@/src/features/inventory/queries";
-import { updateInventoryItemAction } from "@/src/features/inventory/actions";
+import { getInventoryItemById, getCategories, getBrands, getConditions, getDeviceModels, getCompatibilityByItem } from "@/src/features/inventory/queries";
+import { updateInventoryItemAction, linkCompatibilityAction, unlinkCompatibilityAction } from "@/src/features/inventory/actions";
 import { notFound, redirect } from "next/navigation";
 
 export default async function InventoryItemDetailPage({
@@ -8,11 +8,13 @@ export default async function InventoryItemDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [item, categories, brands, conditions] = await Promise.all([
+  const [item, categories, brands, conditions, deviceModels, compatibility] = await Promise.all([
     getInventoryItemById(id),
     getCategories(),
     getBrands(),
     getConditions(),
+    getDeviceModels(),
+    getCompatibilityByItem(id),
   ]);
 
   if (!item) {
@@ -21,6 +23,9 @@ export default async function InventoryItemDetailPage({
 
   const appUser = await getCurrentAppUser();
   const canEdit = appUser?.role === "owner" || appUser?.role === "admin";
+
+  const linkedModelIds = new Set(compatibility.map((c) => c.device_model_id));
+  const availableModels = deviceModels.filter((m) => !linkedModelIds.has(m.id));
 
   return (
     <main className="dashboard-content">
@@ -266,6 +271,75 @@ export default async function InventoryItemDetailPage({
             </div>
           </article>
         )}
+
+        {/* Compatibility Section */}
+        <article className="dashboard-card">
+          <header className="card-header">
+            <span className="card-icon" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6.75a4.5 4.5 0 0 0-9 0v3.75a3.75 3.75 0 1 0 9 0v-3.75Z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V7.5a2.25 2.25 0 0 0-2.25-2.25H4.5A2.25 2.25 0 0 0 2.25 7.5v9.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+            </span>
+            <h2>Compatible Device Models</h2>
+          </header>
+
+          {compatibility.length > 0 && (
+            <div className="compatibility-list">
+              {compatibility.map((comp) => (
+                <div key={comp.id} className="compatibility-item">
+                  <div className="compatibility-info">
+                    <span className="compatibility-name">{comp.device_model?.name ?? "Unknown Model"}</span>
+                    <span className="compatibility-brand">{comp.device_model?.brand?.name ?? ""}</span>
+                  </div>
+                  {canEdit && (
+                    <form action={unlinkCompatibilityAction}>
+                      <input type="hidden" name="inventoryItemId" value={item.id} />
+                      <input type="hidden" name="deviceModelId" value={comp.device_model_id} />
+                      <button type="submit" className="btn btn-ghost btn-sm" onClick={(e) => {
+                        if (!confirm("Remove this compatibility?")) e.preventDefault();
+                      }}>
+                        Remove
+                      </button>
+                    </form>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {compatibility.length === 0 && (
+            <p className="muted">No compatible device models linked yet.</p>
+          )}
+
+          {canEdit && availableModels.length > 0 && (
+            <div className="compatibility-add">
+              <h3 className="compatibility-add-title">Add Compatible Model</h3>
+              <form action={linkCompatibilityAction} className="compatibility-form">
+                <input type="hidden" name="inventoryItemId" value={item.id} />
+                <div className="form-group">
+                  <label className="form-label" htmlFor="deviceModelId">Device Model</label>
+                  <select
+                    id="deviceModelId"
+                    name="deviceModelId"
+                    required
+                    className="form-input form-select"
+                  >
+                    <option value="">Select device model</option>
+                    {availableModels.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.name} {model.brand && `(${model.brand.name})`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button type="submit" className="btn btn-primary btn-sm">
+                  Link Model
+                </button>
+              </form>
+            </div>
+          )}
+        </article>
       </section>
     </main>
   );
