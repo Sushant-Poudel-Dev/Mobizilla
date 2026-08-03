@@ -1,6 +1,37 @@
 import { getStaff, getBranches } from "@/src/features/staff/queries";
 import { inviteStaff } from "@/src/features/staff/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Table,
+  Input,
+  Select,
+  Button,
+  Badge,
+} from "@/src/components/ui";
+import { formatDate } from "@/src/lib/format";
+import { type SelectOption } from "@/src/components/ui/Select";
+
+const roleLabels: Record<string, string> = {
+  owner: "Owner",
+  admin: "Admin",
+  technician: "Technician",
+  front_desk: "Front Desk",
+  staff: "Staff",
+};
+
+const roleBadges: Record<string, "default" | "success" | "warning" | "danger" | "accent" | "info"> = {
+  owner: "accent",
+  admin: "default",
+  front_desk: "success",
+  technician: "warning",
+  staff: "info",
+};
 
 export default async function StaffPage({
   searchParams,
@@ -14,151 +45,150 @@ export default async function StaffPage({
     redirect("/login");
   }
 
-  const roleLabels: Record<string, string> = {
-    owner: "Owner",
-    admin: "Admin",
-    technician: "Technician",
-    front_desk: "Front Desk",
-    staff: "Staff",
-  };
+  const appUser = await getCurrentAppUser();
+  const canInvite = appUser?.role === "owner" || appUser?.role === "admin";
+
+  const columns = [
+    {
+      key: "full_name",
+      header: "Name",
+      render: (member: typeof staff[0]) => member.full_name,
+    },
+    {
+      key: "email",
+      header: "Email",
+      render: (member: typeof staff[0]) => member.email,
+    },
+    {
+      key: "role",
+      header: "Role",
+      render: (member: typeof staff[0]) => (
+        <Badge variant={roleBadges[member.role] ?? "default"} size="sm">
+          {roleLabels[member.role] ?? member.role}
+        </Badge>
+      ),
+    },
+    {
+      key: "branch",
+      header: "Branch",
+      render: (member: typeof staff[0]) =>
+        branches.find((b) => b.id === member.branch_id)?.branch_name ?? "—",
+    },
+    {
+      key: "created_at",
+      header: "Joined",
+      render: (member: typeof staff[0]) => formatDate(member.created_at),
+    },
+  ];
+
+  const roleOptions: SelectOption[] = [
+    { value: "", label: "Select role" },
+    { value: "admin", label: "Admin" },
+    { value: "technician", label: "Technician" },
+    { value: "front_desk", label: "Front Desk" },
+    { value: "staff", label: "Staff" },
+  ];
+
+  const branchOptions: SelectOption[] = [
+    { value: "", label: "— No branch assigned —" },
+    ...branches.map((branch) => ({ value: branch.id, label: branch.branch_name })),
+  ];
 
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>Staff Management</h1>
-          <p>Manage team members and their roles</p>
-        </div>
-      </header>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-fg">Staff Management</h1>
+        <p className="text-fg-secondary mt-1">Manage team members and their roles</p>
+      </div>
 
+      {/* Messages */}
       {error && (
-        <div className="error-message" role="alert">
+        <div className="mb-6 p-4 bg-error-light border border-error/20 rounded-md text-error text-sm" role="alert">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="success-message" role="status">
+        <div className="mb-6 p-4 bg-success-light border border-success/20 rounded-md text-success text-sm" role="status">
           Staff member invited successfully. They will receive an email to set their password.
         </div>
       )}
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card staff-table-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.5a3.75 3.75 0 0 1-7.5 0M9 9a3.75 3.75 0 0 1 7.5 0M9 15.75a3.75 3.75 0 0 1 7.5 0" />
-              </svg>
-            </span>
-            <h2>Staff Members</h2>
-          </header>
-          <div className="table-wrapper">
-            <table className="staff-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Branch</th>
-                  <th>Joined</th>
-                </tr>
-              </thead>
-              <tbody>
-                {staff.map((member) => (
-                  <tr key={member.id}>
-                    <td>{member.full_name}</td>
-                    <td>{member.email}</td>
-                    <td>
-                      <span className={`role-badge role-${member.role}`}>
-                        {roleLabels[member.role] ?? member.role}
-                      </span>
-                    </td>
-                    <td>
-                      {branches.find((b) => b.id === member.branch_id)?.branch_name ?? "—"}
-                    </td>
-                    <td>{new Date(member.created_at).toLocaleDateString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </article>
+      {/* Staff Table + Invite Form */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Staff Table - 2/3 width */}
+        <div className="lg:col-span-2">
+          <Card padding="none">
+            <CardHeader className="pb-4">
+              <CardTitle>Staff Members</CardTitle>
+              <CardDescription>Team members and their roles</CardDescription>
+            </CardHeader>
+            <Table
+              columns={columns}
+              data={staff}
+              keyExtractor={(member) => member.id}
+              emptyState={
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-fg-tertiary/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0Z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.5a3.75 3.75 0 01-7.5 0M9 9a3.75 3.75 0 017.5 0M9 15.75a3.75 3.75 0 017.5 0" />
+                  </svg>
+                  <p className="text-fg-secondary">No staff members yet.</p>
+                  {canInvite && <p className="text-fg-tertiary text-sm mt-1">Invite your first team member using the form.</p>}
+                </div>
+              }
+            />
+          </Card>
+        </div>
 
-        <article className="dashboard-card invite-form-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 10.5v-3m3.75-13.5a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0ZM3.75 18.75a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0ZM3.75 4.5a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm18 9a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0ZM18 19.5a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0ZM18 4.5a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-              </svg>
-            </span>
-            <h2>Invite New Staff</h2>
-          </header>
-          <form action={inviteStaff} className="invite-form">
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-                className="form-input"
-                placeholder="colleague@shop.com"
-              />
-            </div>
+        {/* Invite Form - 1/3 width */}
+        {canInvite && (
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Invite New Staff</CardTitle>
+              <CardDescription>Send an invitation to join the team</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={inviteStaff} className="space-y-4">
+                <Input
+                  label="Email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="colleague@shop.com"
+                  autoComplete="email"
+                />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="fullName">Full name</label>
-              <input
-                id="fullName"
-                name="fullName"
-                required
-                autoComplete="name"
-                className="form-input"
-                placeholder="Jane Smith"
-              />
-            </div>
+                <Input
+                  label="Full name"
+                  name="fullName"
+                  required
+                  placeholder="Jane Smith"
+                  autoComplete="name"
+                />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="role">Role</label>
-              <select
-                id="role"
-                name="role"
-                required
-                className="form-input form-select"
-              >
-                <option value="">Select role</option>
-                <option value="admin">Admin</option>
-                <option value="technician">Technician</option>
-                <option value="front_desk">Front Desk</option>
-                <option value="staff">Staff</option>
-              </select>
-            </div>
+                <Select
+                  label="Role"
+                  name="role"
+                  required
+                  options={roleOptions}
+                />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="branchId">Branch (optional)</label>
-              <select
-                id="branchId"
-                name="branchId"
-                className="form-input form-select"
-              >
-                <option value="">— No branch assigned —</option>
-                {branches.map((branch) => (
-                  <option key={branch.id} value={branch.id}>
-                    {branch.branch_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <Select
+                  label="Branch (optional)"
+                  name="branchId"
+                  options={branchOptions}
+                />
 
-            <button type="submit" className="btn btn-primary">
-              Send Invitation
-            </button>
-          </form>
-        </article>
-      </section>
+                <Button type="submit" variant="primary" className="w-full">
+                  Send Invitation
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </main>
   );
 }

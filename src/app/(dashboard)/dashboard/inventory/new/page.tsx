@@ -1,6 +1,19 @@
 import { getCategories, getBrands, getConditions } from "@/src/features/inventory/queries";
 import { createInventoryItemAction } from "@/src/features/inventory/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Select,
+  Textarea,
+  Button,
+} from "@/src/components/ui";
+import { type SelectOption } from "@/src/components/ui/Select";
 
 export default async function NewInventoryItemPage() {
   const [categories, brands, conditions] = await Promise.all([
@@ -16,166 +29,114 @@ export default async function NewInventoryItemPage() {
     redirect("/dashboard/inventory");
   }
 
+  const categoryOptions: SelectOption[] = [
+    { value: "", label: "Select category" },
+    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+  ];
+
+  const brandOptions: SelectOption[] = [
+    { value: "", label: "Select brand (optional)" },
+    ...brands.map((brand) => ({ value: brand.id, label: brand.name })),
+  ];
+
+  const conditionOptions: SelectOption[] = [
+    { value: "", label: "Select condition (optional)" },
+    ...conditions.map((cond) => ({ value: cond.id, label: cond.name })),
+  ];
+
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>New Inventory Item</h1>
-          <p>Add a new part to your catalog</p>
-        </div>
-      </header>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-fg">New Inventory Item</h1>
+        <p className="text-fg-secondary mt-1">Add a new part to your catalog</p>
+      </div>
 
-      <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr", maxWidth: "720px" }}>
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </span>
-            <h2>Item Details</h2>
-          </header>
+      <Card padding="md" className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Item Details</CardTitle>
+          <CardDescription>Enter the inventory item information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createInventoryItemAction} className="space-y-4">
+            <Input
+              label="Part name *"
+              name="partName"
+              required
+              placeholder="iPhone 13 Screen Assembly"
+              autoComplete="off"
+            />
 
-          <form action={createInventoryItemAction} className="inventory-form">
-            <div className="form-group">
-              <label className="form-label" htmlFor="partName">Part name *</label>
-              <input
-                id="partName"
-                name="partName"
+            <Input
+              label="Part code"
+              name="partCode"
+              placeholder="IP13-SCR-001"
+              autoComplete="off"
+            />
+
+            <Input
+              label="Barcode"
+              name="barcode"
+              placeholder="Scan or enter barcode"
+              autoComplete="off"
+            />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Category *"
+                name="categoryId"
                 required
-                autoComplete="off"
-                className="form-input"
-                placeholder="iPhone 13 Screen Assembly"
+                options={categoryOptions}
+              />
+
+              <Select
+                label="Brand"
+                name="brandId"
+                options={brandOptions}
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="partCode">Part code</label>
-              <input
-                id="partCode"
-                name="partCode"
-                autoComplete="off"
-                className="form-input"
-                placeholder="IP13-SCR-001"
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Selling price *"
+                name="sellingPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+                placeholder="0.00"
+              />
+
+              <Select
+                label="Condition"
+                name="conditionId"
+                options={conditionOptions}
               />
             </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="barcode">Barcode</label>
-              <input
-                id="barcode"
-                name="barcode"
-                autoComplete="off"
-                className="form-input"
-                placeholder="Scan or enter barcode"
-              />
-            </div>
+            <Textarea
+              label="Description"
+              name="description"
+              rows={3}
+              placeholder="Additional details..."
+            />
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="categoryId">Category *</label>
-                <select
-                  id="categoryId"
-                  name="categoryId"
-                  required
-                  className="form-input form-select"
-                >
-                  <option value="">Select category</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <Input
+              label="Image URL"
+              name="imageUrl"
+              type="url"
+              placeholder="https://example.com/image.jpg"
+            />
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="brandId">Brand</label>
-                <select
-                  id="brandId"
-                  name="brandId"
-                  className="form-input form-select"
-                >
-                  <option value="">Select brand (optional)</option>
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="sellingPrice">Selling price *</label>
-                <input
-                  id="sellingPrice"
-                  name="sellingPrice"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  required
-                  className="form-input"
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="conditionId">Condition</label>
-                <select
-                  id="conditionId"
-                  name="conditionId"
-                  className="form-input form-select"
-                >
-                  <option value="">Select condition (optional)</option>
-                  {conditions.map((cond) => (
-                    <option key={cond.id} value={cond.id}>
-                      {cond.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                name="description"
-                rows={3}
-                className="form-input form-textarea"
-                placeholder="Additional details..."
-              />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="imageUrl">Image URL</label>
-              <input
-                id="imageUrl"
-                name="imageUrl"
-                type="url"
-                className="form-input"
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Create Item
-              </button>
-              <a href="/dashboard/inventory" className="btn btn-secondary">
-                Cancel
-              </a>
+            <div className="flex gap-3 pt-4 border-t border-border">
+              <Button type="submit" variant="primary">Create Item</Button>
+              <Button asChild variant="secondary">
+                <a href="/dashboard/inventory">Cancel</a>
+              </Button>
             </div>
           </form>
-        </article>
-      </section>
+        </CardContent>
+      </Card>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

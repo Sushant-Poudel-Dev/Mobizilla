@@ -1,5 +1,17 @@
 import { getPurchaseById } from "@/src/features/purchases/queries";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { notFound, redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Table,
+  StatusBadge,
+  Button,
+} from "@/src/components/ui";
+import { formatCurrency, formatDate } from "@/src/lib/format";
 
 export default async function PurchaseDetailPage({
   params,
@@ -14,135 +26,131 @@ export default async function PurchaseDetailPage({
   }
 
   const appUser = await getCurrentAppUser();
+  const canEdit = appUser?.role === "owner" || appUser?.role === "admin";
+
+  const subtotal = purchase.items?.reduce((sum, i) => sum + Number(i.total_cost), 0) ?? 0;
+  const additionalCost = Number(purchase.additional_cost ?? 0);
+  const grandTotal = subtotal + additionalCost;
 
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>{purchase.purchase_number}</h1>
-          <p>{new Date(purchase.purchase_date).toLocaleDateString()}</p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">{purchase.purchase_number}</h1>
+          <p className="text-fg-secondary mt-1">{formatDate(purchase.purchase_date)}</p>
         </div>
-      </header>
+        <div className="flex items-center gap-2">
+          <StatusBadge status={purchase.payment_status?.name ?? "—"} />
+        </div>
+      </div>
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 0 1 2.25-2.25H19.5A2.25 2.25 0 0 1 21.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 0 0-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-              </svg>
-            </span>
-            <h2>Purchase Details</h2>
-          </header>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - 2/3 width */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Purchase Details */}
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Purchase Details</CardTitle>
+              <CardDescription>Purchase order information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-sm text-fg-secondary">Purchase #</dt>
+                  <dd className="font-medium text-fg">{purchase.purchase_number}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Date</dt>
+                  <dd className="font-medium text-fg">{formatDate(purchase.purchase_date)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Supplier</dt>
+                  <dd className="font-medium text-fg">{purchase.supplier?.supplier_name ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Branch</dt>
+                  <dd className="font-medium text-fg">{purchase.branch?.branch_name ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Created By</dt>
+                  <dd className="font-medium text-fg">{purchase.created_by_user_id ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Created</dt>
+                  <dd className="font-medium text-fg">{formatDate(purchase.created_at)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Updated</dt>
+                  <dd className="font-medium text-fg">{formatDate(purchase.updated_at)}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
 
-          <dl className="card-fields">
-            <div>
-              <dt>Purchase #</dt>
-              <dd>{purchase.purchase_number}</dd>
-            </div>
-            <div>
-              <dt>Date</dt>
-              <dd>{new Date(purchase.purchase_date).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt>Supplier</dt>
-              <dd>{purchase.supplier?.supplier_name ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Branch</dt>
-              <dd>{purchase.branch?.branch_name ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Payment Status</dt>
-              <dd><span className="status-badge">{purchase.payment_status?.name ?? "—"}</span></dd>
-            </div>
-            <div>
-              <dt>Additional Cost</dt>
-              <dd>₱{Number(purchase.additional_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            </div>
-            <div>
-              <dt>Created By</dt>
-              <dd>{purchase.created_by_user_id ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Created</dt>
-              <dd>{new Date(purchase.created_at).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt>Updated</dt>
-              <dd>{new Date(purchase.updated_at).toLocaleDateString()}</dd>
-            </div>
-          </dl>
-        </article>
+          {/* Line Items */}
+          <Card padding="none">
+            <CardHeader className="pb-4">
+              <CardTitle>Line Items</CardTitle>
+              <CardDescription>{purchase.items?.length ?? 0} item(s)</CardDescription>
+            </CardHeader>
+            {purchase.items && purchase.items.length > 0 ? (
+              <Table
+                columns={[
+                  { key: "item", header: "Item", render: (item: typeof purchase.items[0]) => <span className="font-medium">{item.inventory_item?.part_name ?? "—"}</span> },
+                  { key: "part_code", header: "Part Code", render: (item: typeof purchase.items[0]) => item.inventory_item?.part_code ?? "—" },
+                  { key: "category", header: "Category", render: (item: typeof purchase.items[0]) => item.inventory_item?.category?.name ?? "—" },
+                  { key: "brand", header: "Brand", render: (item: typeof purchase.items[0]) => item.inventory_item?.brand?.name ?? "—" },
+                  { key: "condition", header: "Condition", render: (item: typeof purchase.items[0]) => item.condition?.name ?? "—" },
+                  { key: "quantity", header: "Qty", className: "text-right font-mono", render: (item: typeof purchase.items[0]) => item.quantity },
+                  { key: "unit_cost", header: "Unit Cost", className: "text-right font-mono", render: (item: typeof purchase.items[0]) => formatCurrency(item.unit_cost, "PHP") },
+                  { key: "total_cost", header: "Total", className: "text-right font-mono font-medium", render: (item: typeof purchase.items[0]) => formatCurrency(item.total_cost, "PHP") },
+                ]}
+                data={purchase.items}
+                keyExtractor={(item) => item.id}
+              />
+            ) : (
+              <CardContent className="py-12 text-center">
+                <p className="text-fg-tertiary">No line items on this purchase.</p>
+              </CardContent>
+            )}
 
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 0 1 2.25-2.25H19.5A2.25 2.25 0 0 1 21.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 0 0-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-              </svg>
-            </span>
-            <h2>Line Items ({purchase.items?.length ?? 0})</h2>
-          </header>
+            {/* Totals */}
+            {purchase.items && purchase.items.length > 0 && (
+              <CardContent className="pb-6">
+                <dl className="space-y-2 border-t border-border pt-4">
+                  <div className="flex justify-between">
+                    <dt className="text-fg-secondary">Subtotal</dt>
+                    <dd className="font-medium font-mono">{formatCurrency(subtotal, "PHP")}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-fg-secondary">Additional Cost</dt>
+                    <dd className="font-medium font-mono">{formatCurrency(additionalCost, "PHP")}</dd>
+                  </div>
+                  <div className="flex justify-between text-lg border-t border-border pt-3">
+                    <dt className="font-semibold">Total</dt>
+                    <dd className="font-bold font-mono">{formatCurrency(grandTotal, "PHP")}</dd>
+                  </div>
+                </dl>
+              </CardContent>
+            )}
+          </Card>
+        </div>
 
-          {purchase.items && purchase.items.length > 0 ? (
-            <div className="table-wrapper">
-              <table className="purchase-items-table">
-                <thead>
-                  <tr>
-                    <th>Item</th>
-                    <th>Part Code</th>
-                    <th>Category</th>
-                    <th>Brand</th>
-                    <th>Condition</th>
-                    <th>Qty</th>
-                    <th>Unit Cost</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {purchase.items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="font-medium">{item.inventory_item?.part_name ?? "—"}</td>
-                      <td>{item.inventory_item?.part_code ?? "—"}</td>
-                      <td>{item.inventory_item?.category?.name ?? "—"}</td>
-                      <td>{item.inventory_item?.brand?.name ?? "—"}</td>
-                      <td>{item.condition?.name ?? "—"}</td>
-                      <td className="text-right font-mono">{item.quantity}</td>
-                      <td className="text-right font-mono">₱{Number(item.unit_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="text-right font-mono font-medium">₱{Number(item.total_cost).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="muted">No line items on this purchase.</p>
-          )}
-
-          {purchase.items && purchase.items.length > 0 && (
-            <div className="purchase-totals">
-              <div className="total-row">
-                <span>Subtotal</span>
-                <span>₱{purchase.items.reduce((sum, i) => sum + Number(i.total_cost), 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="total-row">
-                <span>Additional Cost</span>
-                <span>₱{Number(purchase.additional_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="total-row grand-total">
-                <span>Total</span>
-                <span>₱{(purchase.items.reduce((sum, i) => sum + Number(i.total_cost), 0) + Number(purchase.additional_cost || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-          )}
-        </article>
-      </section>
+        {/* Right Column - 1/3 width */}
+        <div className="space-y-6">
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button asChild variant="secondary" className="w-full justify-start">
+                <a href="/dashboard/purchases">← Back to Purchases</a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

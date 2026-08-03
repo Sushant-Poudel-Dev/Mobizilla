@@ -1,6 +1,22 @@
 import { getInventoryItems, getCategories, getBrands, getConditions } from "@/src/features/inventory/queries";
 import { createInventoryItemAction } from "@/src/features/inventory/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Table,
+  Button,
+  Input,
+  Select,
+  Textarea,
+  Badge,
+} from "@/src/components/ui";
+import { formatCurrency } from "@/src/lib/format";
+import { type SelectOption } from "@/src/components/ui/Select";
 
 export default async function InventoryPage({
   searchParams,
@@ -22,221 +38,192 @@ export default async function InventoryPage({
   const appUser = await getCurrentAppUser();
   const canEdit = appUser?.role === "owner" || appUser?.role === "admin";
 
-  return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>Inventory Catalog</h1>
-          <p>Manage parts and components</p>
-        </div>
-      </header>
+  const columns = [
+    {
+      key: "part_name",
+      header: "Part Name",
+      render: (item: typeof items[0]) => <span className="font-medium">{item.part_name}</span>,
+    },
+    {
+      key: "part_code",
+      header: "Part Code",
+      render: (item: typeof items[0]) => item.part_code ?? "—",
+    },
+    {
+      key: "category",
+      header: "Category",
+      render: (item: typeof items[0]) => item.category?.name ?? "—",
+    },
+    {
+      key: "brand",
+      header: "Brand",
+      render: (item: typeof items[0]) => item.brand?.name ?? "—",
+    },
+    {
+      key: "selling_price",
+      header: "Selling Price",
+      className: "font-mono font-medium",
+      render: (item: typeof items[0]) => formatCurrency(item.selling_price, "PHP"),
+    },
+    {
+      key: "condition",
+      header: "Condition",
+      render: () => <Badge variant="default" size="sm">—</Badge>,
+    },
+  ];
 
+  const categoryOptions: SelectOption[] = [
+    { value: "", label: "Select category" },
+    ...categories.map((cat) => ({ value: cat.id, label: cat.name })),
+  ];
+
+  const brandOptions: SelectOption[] = [
+    { value: "", label: "Select brand (optional)" },
+    ...brands.map((brand) => ({ value: brand.id, label: brand.name })),
+  ];
+
+  const conditionOptions: SelectOption[] = [
+    { value: "", label: "Select condition (optional)" },
+    ...conditions.map((cond) => ({ value: cond.id, label: cond.name })),
+  ];
+
+  return (
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Inventory Catalog</h1>
+          <p className="text-fg-secondary mt-1">Manage parts and components</p>
+        </div>
+      </div>
+
+      {/* Messages */}
       {error && (
-        <div className="error-message" role="alert">
+        <div className="mb-6 p-4 bg-error-light border border-error/20 rounded-md text-error text-sm" role="alert">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="success-message" role="status">
+        <div className="mb-6 p-4 bg-success-light border border-success/20 rounded-md text-success text-sm" role="status">
           Inventory item saved successfully.
         </div>
       )}
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card inventory-table-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
-              </svg>
-            </span>
-            <h2>All Items</h2>
-          </header>
+      {/* Inventory Table + Add Form */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Items Table - 2/3 width */}
+        <div className="lg:col-span-2">
+          <Card padding="none">
+            <CardHeader className="pb-4">
+              <CardTitle>All Items</CardTitle>
+              <CardDescription>Parts and components catalog</CardDescription>
+            </CardHeader>
+            <Table
+              columns={columns}
+              data={items}
+              keyExtractor={(item) => item.id}
+              emptyState={
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-fg-tertiary/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  <p className="text-fg-secondary">No inventory items yet.</p>
+                  {canEdit && (
+                    <p className="text-fg-tertiary text-sm mt-1">Add your first item using the form.</p>
+                  )}
+                </div>
+              }
+            />
+          </Card>
+        </div>
 
-          <div className="table-wrapper">
-            <table className="inventory-table">
-              <thead>
-                <tr>
-                  <th>Part Name</th>
-                  <th>Part Code</th>
-                  <th>Category</th>
-                  <th>Brand</th>
-                  <th>Selling Price</th>
-                  <th>Condition</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="empty-state">
-                      No inventory items yet. Add your first item using the form.
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="font-medium">{item.part_name}</td>
-                      <td>{item.part_code ?? "—"}</td>
-                      <td>{item.category?.name ?? "—"}</td>
-                      <td>{item.brand?.name ?? "—"}</td>
-                      <td>₱{Number(item.selling_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td>—</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </article>
-
+        {/* Add Item Form - 1/3 width */}
         {canEdit && (
-          <article className="dashboard-card invite-form-card">
-            <header className="card-header">
-              <span className="card-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </span>
-              <h2>Add Inventory Item</h2>
-            </header>
-
-            <form action={createInventoryItemAction} className="inventory-form">
-              <div className="form-group">
-                <label className="form-label" htmlFor="partName">Part name *</label>
-                <input
-                  id="partName"
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Add Inventory Item</CardTitle>
+              <CardDescription>Create a new part or component</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={createInventoryItemAction} className="space-y-4">
+                <Input
+                  label="Part name *"
                   name="partName"
                   required
-                  autoComplete="off"
-                  className="form-input"
                   placeholder="iPhone 13 Screen Assembly"
+                  autoComplete="off"
                 />
-              </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="partCode">Part code</label>
-                <input
-                  id="partCode"
+                <Input
+                  label="Part code"
                   name="partCode"
-                  autoComplete="off"
-                  className="form-input"
                   placeholder="IP13-SCR-001"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="barcode">Barcode</label>
-                <input
-                  id="barcode"
-                  name="barcode"
                   autoComplete="off"
-                  className="form-input"
-                  placeholder="Scan or enter barcode"
                 />
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="categoryId">Category *</label>
-                  <select
-                    id="categoryId"
+                <Input
+                  label="Barcode"
+                  name="barcode"
+                  placeholder="Scan or enter barcode"
+                  autoComplete="off"
+                />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Select
+                    label="Category *"
                     name="categoryId"
                     required
-                    className="form-input form-select"
-                  >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    options={categoryOptions}
+                  />
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="brandId">Brand</label>
-                  <select
-                    id="brandId"
+                  <Select
+                    label="Brand"
                     name="brandId"
-                    className="form-input form-select"
-                  >
-                    <option value="">Select brand (optional)</option>
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={brandOptions}
+                  />
                 </div>
-              </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="sellingPrice">Selling price *</label>
-                  <input
-                    id="sellingPrice"
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Input
+                    label="Selling price *"
                     name="sellingPrice"
                     type="number"
                     step="0.01"
                     min="0"
                     required
-                    className="form-input"
                     placeholder="0.00"
+                  />
+
+                  <Select
+                    label="Condition"
+                    name="conditionId"
+                    options={conditionOptions}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label" htmlFor="conditionId">Condition</label>
-                  <select
-                    id="conditionId"
-                    name="conditionId"
-                    className="form-input form-select"
-                  >
-                    <option value="">Select condition (optional)</option>
-                    {conditions.map((cond) => (
-                      <option key={cond.id} value={cond.id}>
-                        {cond.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="description">Description</label>
-                <textarea
-                  id="description"
+                <Textarea
+                  label="Description"
                   name="description"
                   rows={3}
-                  className="form-input form-textarea"
                   placeholder="Additional details..."
                 />
-              </div>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="imageUrl">Image URL</label>
-                <input
-                  id="imageUrl"
+                <Input
+                  label="Image URL"
                   name="imageUrl"
                   type="url"
-                  className="form-input"
                   placeholder="https://example.com/image.jpg"
                 />
-              </div>
 
-              <button type="submit" className="btn btn-primary">
-                Add Item
-              </button>
-            </form>
-          </article>
+                <Button type="submit" variant="primary" className="w-full">
+                  Add Item
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         )}
-      </section>
+      </div>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

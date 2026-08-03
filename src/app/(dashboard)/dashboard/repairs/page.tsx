@@ -4,7 +4,23 @@ import {
   getBranchesForRepair,
   getTechniciansForRepair,
 } from "@/src/features/repairs/queries";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Table,
+  TableToolbar,
+  Button,
+  Select,
+  Badge,
+  StatusBadge,
+} from "@/src/components/ui";
+import { formatDate } from "@/src/lib/format";
+import { type SelectOption } from "@/src/components/ui/Select";
 
 export default async function RepairsPage({
   searchParams,
@@ -32,150 +48,159 @@ export default async function RepairsPage({
   const appUser = await getCurrentAppUser();
   const canCreate = appUser?.role === "owner" || appUser?.role === "admin" || appUser?.role === "front_desk";
 
+  const statusOptions: SelectOption[] = [
+    { value: "", label: "All statuses" },
+    ...statuses.map((s) => ({ value: s.id, label: s.name })),
+  ];
+
+  const branchOptions: SelectOption[] = [
+    { value: "", label: "All branches" },
+    ...branches.map((b) => ({ value: b.id, label: b.branch_name })),
+  ];
+
+  const technicianOptions: SelectOption[] = [
+    { value: "", label: "All technicians" },
+    ...technicians.map((t) => ({ value: t.id, label: t.full_name })),
+  ];
+
+  const columns = [
+    {
+      key: "ticket_number",
+      header: "Ticket #",
+      render: (ticket: typeof tickets[0]) => (
+        <a href={`/dashboard/repairs/${ticket.id}`} className="font-medium text-accent hover:underline">
+          {ticket.ticket_number}
+        </a>
+      ),
+    },
+    {
+      key: "customer",
+      header: "Customer",
+      render: (ticket: typeof tickets[0]) => ticket.customer?.full_name ?? "—",
+    },
+    {
+      key: "device",
+      header: "Device",
+      render: (ticket: typeof tickets[0]) => {
+        if (!ticket.device_model) return "—";
+        return (
+          <>
+            {ticket.device_model.name}
+            {ticket.device_model.brand && <span className="text-fg-secondary ml-1">({ticket.device_model.brand.name})</span>}
+          </>
+        );
+      },
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (ticket: typeof tickets[0]) => (
+        <StatusBadge status={ticket.status?.name ?? "—"} />
+      ),
+    },
+    {
+      key: "technician",
+      header: "Technician",
+      render: (ticket: typeof tickets[0]) => ticket.assigned_technician?.full_name ?? "—",
+    },
+    {
+      key: "branch",
+      header: "Branch",
+      render: (ticket: typeof tickets[0]) => ticket.branch?.branch_name ?? "—",
+    },
+    {
+      key: "created_at",
+      header: "Created",
+      render: (ticket: typeof tickets[0]) => formatDate(ticket.created_at),
+    },
+  ];
+
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>Repair Tickets</h1>
-          <p>Manage repair workflows</p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Repair Tickets</h1>
+          <p className="text-fg-secondary mt-1">Manage repair workflows</p>
         </div>
         {canCreate && (
-          <a href="/dashboard/repairs/new" className="btn btn-primary">
-            New Ticket
-          </a>
+          <Button asChild variant="primary">
+            <a href="/dashboard/repairs/new">New Ticket</a>
+          </Button>
         )}
-      </header>
+      </div>
 
+      {/* Messages */}
       {error && (
-        <div className="error-message" role="alert">
+        <div className="mb-6 p-4 bg-error-light border border-error/20 rounded-md text-error text-sm" role="alert">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="success-message" role="status">
+        <div className="mb-6 p-4 bg-success-light border border-success/20 rounded-md text-success text-sm" role="status">
           Operation completed successfully.
         </div>
       )}
 
       {/* Filters */}
-      <section className="dashboard-card filters-card">
-        <form className="filters-form">
-          <div className="filters-row">
-            <div className="form-group">
-              <label className="form-label" htmlFor="statusId">Status</label>
-              <select
-                id="statusId"
-                name="statusId"
-                className="form-input form-select"
-                defaultValue={statusId ?? ""}
-              >
-                <option value="">All statuses</option>
-                {statuses.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </select>
-            </div>
+      <Card padding="md" className="mb-6">
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+          <CardDescription>Filter tickets by status, branch, or technician</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form className="flex flex-wrap items-end gap-4">
+            <Select
+              label="Status"
+              placeholder="All statuses"
+              options={statusOptions}
+              defaultValue={statusId ?? ""}
+              name="statusId"
+            />
+            <Select
+              label="Branch"
+              placeholder="All branches"
+              options={branchOptions}
+              defaultValue={branchId ?? ""}
+              name="branchId"
+            />
+            <Select
+              label="Technician"
+              placeholder="All technicians"
+              options={technicianOptions}
+              defaultValue={technicianId ?? ""}
+              name="technicianId"
+            />
+            <Button type="submit" variant="primary">Filter</Button>
+            <Button asChild variant="secondary">
+              <a href="/dashboard/repairs">Clear</a>
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="branchId">Branch</label>
-              <select
-                id="branchId"
-                name="branchId"
-                className="form-input form-select"
-                defaultValue={branchId ?? ""}
-              >
-                <option value="">All branches</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>{b.branch_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label className="form-label" htmlFor="technicianId">Technician</label>
-              <select
-                id="technicianId"
-                name="technicianId"
-                className="form-input form-select"
-                defaultValue={technicianId ?? ""}
-              >
-                <option value="">All technicians</option>
-                {technicians.map((t) => (
-                  <option key={t.id} value={t.id}>{t.full_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <button type="submit" className="btn btn-primary filters-submit">
-              Filter
-            </button>
-            <a href="/dashboard/repairs" className="btn btn-secondary filters-submit">
-              Clear
-            </a>
-          </div>
-        </form>
-      </section>
-
-      <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr" }}>
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
+      {/* Tickets Table */}
+      <Card padding="none">
+        <Table
+          columns={columns}
+          data={tickets}
+          keyExtractor={(ticket) => ticket.id}
+          emptyState={
+            <div className="text-center py-12">
+              <svg className="w-12 h-12 mx-auto text-fg-tertiary/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-            </span>
-            <h2>All Tickets</h2>
-          </header>
-
-          <div className="table-wrapper">
-            <table className="repairs-table">
-              <thead>
-                <tr>
-                  <th>Ticket #</th>
-                  <th>Customer</th>
-                  <th>Device</th>
-                  <th>Status</th>
-                  <th>Technician</th>
-                  <th>Branch</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tickets.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="empty-state">
-                      No repair tickets yet. Create your first ticket.
-                    </td>
-                  </tr>
-                ) : (
-                  tickets.map((ticket) => (
-                    <tr key={ticket.id}>
-                      <td className="font-medium">
-                        <a href={`/dashboard/repairs/${ticket.id}`}>{ticket.ticket_number}</a>
-                      </td>
-                      <td>{ticket.customer?.full_name ?? "—"}</td>
-                      <td>
-                        {ticket.device_model?.name ?? "—"}
-                        {ticket.device_model?.brand && ` (${ticket.device_model.brand.name})`}
-                      </td>
-                      <td><span className="status-badge">{ticket.status?.name ?? "—"}</span></td>
-                      <td>{ticket.assigned_technician?.full_name ?? "—"}</td>
-                      <td>{ticket.branch?.branch_name ?? "—"}</td>
-                      <td>{new Date(ticket.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </article>
-      </section>
+              <p className="text-fg-secondary">No repair tickets yet.</p>
+              {canCreate && (
+                <Button asChild variant="primary" className="mt-4 w-auto">
+                  <a href="/dashboard/repairs/new">Create your first ticket</a>
+                </Button>
+              )}
+            </div>
+          }
+        />
+      </Card>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

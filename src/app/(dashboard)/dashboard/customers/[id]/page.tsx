@@ -1,6 +1,19 @@
 import { getCustomerById } from "@/src/features/customers/queries";
 import { updateCustomerAction, deleteCustomerAction } from "@/src/features/customers/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { notFound } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Textarea,
+  Button,
+  Badge,
+} from "@/src/components/ui";
+import { formatDate } from "@/src/lib/format";
 
 export default async function CustomerDetailPage({
   params,
@@ -14,159 +27,162 @@ export default async function CustomerDetailPage({
     notFound();
   }
 
+  const appUser = await getCurrentAppUser();
+  const canEdit = appUser?.role === "owner" || appUser?.role === "admin";
+
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>{customer.customer_name}</h1>
-          <p>Customer details</p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">{customer.customer_name}</h1>
+          <p className="text-fg-secondary mt-1">Customer details</p>
         </div>
-      </header>
+      </div>
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
-              </svg>
-            </span>
-            <h2>Details</h2>
-          </header>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - 2/3 width */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Details */}
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Details</CardTitle>
+              <CardDescription>Customer information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-sm text-fg-secondary">Name</dt>
+                  <dd className="font-medium text-fg">{customer.customer_name}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Phone</dt>
+                  <dd className="font-medium text-fg">{customer.phone ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Email</dt>
+                  <dd className="font-medium text-fg">{customer.email ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Address</dt>
+                  <dd className="font-medium text-fg">{customer.address ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Notes</dt>
+                  <dd className="font-medium text-fg">{customer.notes ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Created</dt>
+                  <dd className="font-medium text-fg">{formatDate(customer.created_at)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Updated</dt>
+                  <dd className="font-medium text-fg">{formatDate(customer.updated_at)}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
 
-          <dl className="card-fields">
-            <div>
-              <dt>Name</dt>
-              <dd>{customer.customer_name}</dd>
-            </div>
-            <div>
-              <dt>Phone</dt>
-              <dd>{customer.phone ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Email</dt>
-              <dd>{customer.email ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Address</dt>
-              <dd>{customer.address ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Notes</dt>
-              <dd>{customer.notes ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Created</dt>
-              <dd>{new Date(customer.created_at).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt>Updated</dt>
-              <dd>{new Date(customer.updated_at).toLocaleDateString()}</dd>
-            </div>
-          </dl>
-        </article>
+          {/* Edit Form */}
+          {canEdit && (
+            <Card padding="md">
+              <CardHeader>
+                <CardTitle>Edit Customer</CardTitle>
+                <CardDescription>Update customer information</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={updateCustomerAction} className="space-y-4">
+                  <input type="hidden" name="id" value={customer.id} />
 
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-              </svg>
-            </span>
-            <h2>Edit Customer</h2>
-          </header>
+                  <Input
+                    label="Customer name *"
+                    name="customerName"
+                    required
+                    defaultValue={customer.customer_name}
+                    placeholder="John Doe"
+                    autoComplete="name"
+                  />
 
-          <form action={updateCustomerAction} className="customer-form">
-            <input type="hidden" name="id" value={customer.id} />
+                  <Input
+                    label="Phone"
+                    name="phone"
+                    type="tel"
+                    defaultValue={customer.phone ?? ""}
+                    placeholder="+63 9XX XXX XXXX"
+                    autoComplete="tel"
+                  />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="customerName">Customer name *</label>
-              <input
-                id="customerName"
-                name="customerName"
-                required
-                defaultValue={customer.customer_name}
-                autoComplete="name"
-                className="form-input"
-                placeholder="John Doe"
-              />
-            </div>
+                  <Input
+                    label="Email"
+                    name="email"
+                    type="email"
+                    defaultValue={customer.email ?? ""}
+                    placeholder="john@example.com"
+                    autoComplete="email"
+                  />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="phone">Phone</label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                defaultValue={customer.phone ?? ""}
-                autoComplete="tel"
-                className="form-input"
-                placeholder="+63 9XX XXX XXXX"
-              />
-            </div>
+                  <Textarea
+                    label="Address"
+                    name="address"
+                    rows={3}
+                    defaultValue={customer.address ?? ""}
+                    placeholder="123 Main St, City, Province"
+                  />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                defaultValue={customer.email ?? ""}
-                autoComplete="email"
-                className="form-input"
-                placeholder="john@example.com"
-              />
-            </div>
+                  <Textarea
+                    label="Notes"
+                    name="notes"
+                    rows={2}
+                    defaultValue={customer.notes ?? ""}
+                    placeholder="Preferred contact time, special instructions..."
+                  />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="address">Address</label>
-              <textarea
-                id="address"
-                name="address"
-                rows={3}
-                className="form-input form-textarea"
-                placeholder="123 Main St, City, Province"
-                defaultValue={customer.address ?? ""}
-              />
-            </div>
+                  <div className="flex gap-3 pt-4 border-t border-border">
+                    <Button type="submit" variant="primary">Save Changes</Button>
+                    <Button asChild variant="secondary">
+                      <a href="/dashboard/customers">Cancel</a>
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="notes">Notes</label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={2}
-                className="form-input form-textarea"
-                placeholder="Preferred contact time, special instructions..."
-                defaultValue={customer.notes ?? ""}
-              />
-            </div>
+          {/* Danger Zone */}
+          {canEdit && (
+            <Card padding="md">
+              <CardHeader>
+                <CardTitle>Danger Zone</CardTitle>
+                <CardDescription>Irreversible actions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={deleteCustomerAction} onSubmit={(e) => {
+                  if (!confirm("Delete this customer? This action cannot be undone.")) {
+                    e.preventDefault();
+                  }
+                }}>
+                  <input type="hidden" name="id" value={customer.id} />
+                  <Button type="submit" variant="danger">Delete Customer</Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Save Changes
-              </button>
-              <a href="/dashboard/customers" className="btn btn-secondary">
-                Cancel
-              </a>
-            </div>
-          </form>
-
-          <div className="danger-zone">
-            <h3 className="danger-title">Danger Zone</h3>
-            <form action={deleteCustomerAction} onSubmit={(e) => {
-              if (!confirm("Delete this customer? This action cannot be undone.")) {
-                e.preventDefault();
-              }
-            }}>
-              <input type="hidden" name="id" value={customer.id} />
-              <button type="submit" className="btn btn-danger">
-                Delete Customer
-              </button>
-            </form>
-          </div>
-        </article>
-      </section>
+        {/* Right Column - 1/3 width */}
+        <div className="space-y-6">
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button asChild variant="secondary" className="w-full justify-start">
+                <a href="/dashboard/customers">← Back to Customers</a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   );
 }
