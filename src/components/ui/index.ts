@@ -9,3 +9,5 @@ export { DropdownMenu, type DropdownMenuProps, type DropdownItem } from "./Dropd
 export { Avatar, AvatarGroup, type AvatarProps, type AvatarSize } from "./Avatar";
 export { ActivityFeed, type ActivityFeedProps, type ActivityItem } from "./ActivityFeed";
 export { UserMenu } from "./UserMenu";
+export { Sidebar } from "./Sidebar";
+export { DashboardHeader } from "./DashboardHeader";

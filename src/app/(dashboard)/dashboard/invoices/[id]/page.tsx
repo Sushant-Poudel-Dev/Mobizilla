@@ -1,7 +1,23 @@
 import { getInvoiceById } from "@/src/features/invoices/queries";
 import { getPaymentMethods } from "@/src/features/payments/queries";
 import { recordPaymentAction } from "@/src/features/payments/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { notFound } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Table,
+  Button,
+  StatusBadge,
+  Input,
+  Select,
+  Badge,
+} from "@/src/components/ui";
+import { formatCurrency, formatDate } from "@/src/lib/format";
+import { type SelectOption } from "@/src/components/ui/Select";
 
 export default async function InvoiceDetailPage({
   params,
@@ -32,257 +48,226 @@ export default async function InvoiceDetailPage({
   const paymentsTotal = invoice.payments?.reduce((sum, p) => sum + Number(p.amount_paid), 0) ?? 0;
   const balanceDue = Number(invoice.total_amount) - paymentsTotal;
 
+  const paymentMethodOptions: SelectOption[] = [
+    { value: "", label: "Select method" },
+    ...paymentMethods.map((m) => ({ value: m.id, label: m.name })),
+  ];
+
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>{invoice.invoice_number}</h1>
-          <p>{invoice.customer?.full_name ?? "Unknown customer"}</p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">{invoice.invoice_number}</h1>
+          <p className="text-fg-secondary mt-1">{invoice.customer?.full_name ?? "Unknown customer"}</p>
         </div>
-      </header>
+        <div className="flex items-center gap-2">
+          <StatusBadge status={invoice.payment_status?.name ?? "—"} />
+        </div>
+      </div>
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000.svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 0 1 2.25-2.25H19.5A2.25 2.25 0 0 1 21.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 0 0-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-              </svg>
-            </span>
-            <h2>Invoice Details</h2>
-          </header>
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - 2/3 width */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Invoice Details */}
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Invoice Details</CardTitle>
+              <CardDescription>Invoice information and customer details</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-sm text-fg-secondary">Invoice #</dt>
+                  <dd className="font-medium text-fg">{invoice.invoice_number}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Date</dt>
+                  <dd className="font-medium text-fg">{formatDate(invoice.invoice_date)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Customer</dt>
+                  <dd className="font-medium text-fg">{invoice.customer?.full_name ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Phone</dt>
+                  <dd className="font-medium text-fg">{invoice.customer?.phone_number ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Ticket</dt>
+                  <dd className="font-medium text-fg">
+                    {invoice.repair_ticket?.ticket_number ? (
+                      <a href={`/dashboard/repairs/${invoice.repair_ticket.id}`} className="text-accent hover:underline">
+                        {invoice.repair_ticket.ticket_number}
+                      </a>
+                    ) : (
+                      "—"
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Branch</dt>
+                  <dd className="font-medium text-fg">{invoice.branch?.branch_name ?? "—"}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Created</dt>
+                  <dd className="font-medium text-fg">{formatDate(invoice.created_at)}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
 
-          <dl className="card-fields">
-            <div>
-              <dt>Invoice #</dt>
-              <dd>{invoice.invoice_number}</dd>
-            </div>
-            <div>
-              <dt>Date</dt>
-              <dd>{new Date(invoice.invoice_date).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt>Customer</dt>
-              <dd>{invoice.customer?.full_name ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Phone</dt>
-              <dd>{invoice.customer?.phone_number ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Ticket</dt>
-              <dd>
-                {invoice.repair_ticket?.ticket_number ? (
-                  <a href={`/dashboard/repairs/${invoice.repair_ticket.id}`}>{invoice.repair_ticket.ticket_number}</a>
-                ) : (
-                  "—"
+          {/* Line Items */}
+          <Card padding="none">
+            <CardHeader className="pb-4">
+              <CardTitle>Line Items</CardTitle>
+              <CardDescription>{invoice.line_items?.length ?? 0} item(s)</CardDescription>
+            </CardHeader>
+            {invoice.line_items && invoice.line_items.length > 0 ? (
+              <Table
+                columns={[
+                  { key: "description", header: "Description", render: (item: typeof invoice.line_items[0]) => item.description },
+                  { key: "type", header: "Type", render: (item: typeof invoice.line_items[0]) => (
+                    <Badge variant="default" size="sm">
+                      {item.repair_part_id ? "Part" : item.repair_service_id ? "Service" : "—"}
+                    </Badge>
+                  )},
+                  { key: "quantity", header: "Qty", className: "text-right font-mono", render: (item: typeof invoice.line_items[0]) => item.quantity },
+                  { key: "unit_price", header: "Unit Price", className: "text-right font-mono", render: (item: typeof invoice.line_items[0]) => formatCurrency(item.unit_price, "PHP") },
+                  { key: "total_price", header: "Total", className: "text-right font-mono font-medium", render: (item: typeof invoice.line_items[0]) => formatCurrency(item.total_price, "PHP") },
+                ]}
+                data={invoice.line_items}
+                keyExtractor={(item) => item.id}
+              />
+            ) : (
+              <CardContent className="py-12 text-center">
+                <p className="text-fg-tertiary">No line items found.</p>
+              </CardContent>
+            )}
+          </Card>
+
+          {/* Payment History */}
+          <Card padding="none">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  <CardTitle>Payment History</CardTitle>
+                  <CardDescription>{invoice.payments?.length ?? 0} payment(s) recorded</CardDescription>
+                </div>
+                {canCreatePayment && balanceDue > 0 && (
+                  <Button asChild variant="ghost" size="sm">
+                    <a href={`#record-payment`}>+ Record Payment</a>
+                  </Button>
                 )}
-              </dd>
-            </div>
-            <div>
-              <dt>Branch</dt>
-              <dd>{invoice.branch?.branch_name ?? "—"}</dd>
-            </div>
-            <div>
-              <dt>Payment Status</dt>
-              <dd><span className="status-badge">{invoice.payment_status?.name ?? "—"}</span></dd>
-            </div>
-            <div>
-              <dt>Created</dt>
-              <dd>{new Date(invoice.created_at).toLocaleDateString()}</dd>
-            </div>
-          </dl>
-        </article>
+              </div>
+            </CardHeader>
+            {invoice.payments && invoice.payments.length > 0 ? (
+              <Table
+                columns={[
+                  { key: "payment_date", header: "Date", render: (payment: typeof invoice.payments[0]) => formatDate(payment.payment_date) },
+                  { key: "payment_method", header: "Method", render: (payment: typeof invoice.payments[0]) => payment.payment_method?.name ?? "—" },
+                  { key: "amount_paid", header: "Amount", className: "text-right font-mono font-medium", render: (payment: typeof invoice.payments[0]) => formatCurrency(payment.amount_paid, "PHP") },
+                  { key: "received_by", header: "Received By", render: (payment: typeof invoice.payments[0]) => payment.received_by?.full_name ?? "—" },
+                  { key: "remarks", header: "Remarks", render: (payment: typeof invoice.payments[0]) => payment.remarks ?? "—" },
+                ]}
+                data={invoice.payments}
+                keyExtractor={(payment) => payment.id}
+              />
+            ) : (
+              <CardContent className="py-12 text-center">
+                <p className="text-fg-tertiary">No payments recorded yet.</p>
+              </CardContent>
+            )}
 
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 0 1 2.25-2.25H19.5A2.25 2.25 0 0 1 21.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 0 0-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-              </svg>
-            </span>
-            <h2>Line Items</h2>
-          </header>
-
-          {invoice.line_items && invoice.line_items.length > 0 ? (
-            <div className="table-wrapper">
-              <table className="invoice-line-items-table">
-                <thead>
-                  <tr>
-                    <th>Description</th>
-                    <th>Type</th>
-                    <th>Qty</th>
-                    <th>Unit Price</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.line_items.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.description}</td>
-                      <td>
-                        {item.repair_part_id ? "Part" : item.repair_service_id ? "Service" : "—"}
-                      </td>
-                      <td className="text-right font-mono">{item.quantity}</td>
-                      <td className="text-right font-mono">₱{Number(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td className="text-right font-mono font-medium">₱{Number(item.total_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {/* Record Payment Form */}
+            {canCreatePayment && balanceDue > 0 && (
+              <div id="record-payment">
+                <CardContent className="pb-6">
+                  <h3 className="text-lg font-semibold text-fg mb-4">Record Payment</h3>
+                <form action={recordPaymentAction} className="space-y-4">
+                  <input type="hidden" name="invoiceId" value={invoice.id} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Amount *"
+                      name="amountPaid"
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={balanceDue}
+                      required
+                      placeholder={balanceDue.toFixed(2)}
+                    />
+                    <Select
+                      label="Method *"
+                      name="paymentMethodId"
+                      required
+                      options={paymentMethodOptions}
+                    />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Date *"
+                      name="paymentDate"
+                      type="date"
+                      required
+                      defaultValue={new Date().toISOString().split("T")[0]}
+                    />
+                    <Input
+                      label="Remarks"
+                      name="remarks"
+                      placeholder="Optional notes"
+                    />
+                  </div>
+                  <Button type="submit" variant="primary">Record Payment</Button>
+                </form>
+              </CardContent>
             </div>
-          ) : (
-            <p className="muted">No line items found.</p>
           )}
-        </article>
+          </Card>
+        </div>
 
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12M15 6v12m-6 0h6m-3 3h6" />
-              </svg>
-            </span>
-            <h2>Totals</h2>
-          </header>
-
-          <div className="card-fields">
-            <div>
-              <dt>Subtotal</dt>
-              <dd>₱{Number(invoice.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            </div>
-            <div>
-              <dt>Tax</dt>
-              <dd>₱{Number(invoice.tax_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            </div>
-            <div>
-              <dt>Discount</dt>
-              <dd>₱{Number(invoice.discount_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            </div>
-            <div className="grand-total">
-              <dt>Total</dt>
-              <dd>₱{Number(invoice.total_amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</dd>
-            </div>
-            <div className="grand-total" style={{ color: balanceDue >= 0 ? "#d93025" : "#188038" }}>
-              <dt>Balance Due</dt>
-              <dd>
-                ₱{Math.max(0, balanceDue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-              </dd>
-            </div>
-          </div>
-        </article>
-
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12M15 6v12m-6 0h6m-3 3h6" />
-              </svg>
-            </span>
-            <h2>Payment History</h2>
-          </header>
-
-          {invoice.payments && invoice.payments.length > 0 ? (
-            <div className="table-wrapper">
-              <table className="payments-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Method</th>
-                    <th>Amount</th>
-                    <th>Received By</th>
-                    <th>Remarks</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {invoice.payments.map((payment) => (
-                    <tr key={payment.id}>
-                      <td>{new Date(payment.payment_date).toLocaleDateString()}</td>
-                      <td>{payment.payment_method?.name ?? "—"}</td>
-                      <td className="text-right font-mono font-medium">₱{Number(payment.amount_paid).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td>{payment.received_by?.full_name ?? "—"}</td>
-                      <td>{payment.remarks ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="muted">No payments recorded yet.</p>
-          )}
-
-          {canCreatePayment && balanceDue > 0 && (
-            <form action={recordPaymentAction} className="payment-form" style={{ marginTop: "1.5rem", paddingTop: "1rem", borderTop: "1px solid var(--color-border)" }}>
-              <input type="hidden" name="invoiceId" value={invoice.id} />
-              <h3 className="repair-form-title">Record Payment</h3>
-              <div className="form-row">
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label" htmlFor="amountPaid">Amount *</label>
-                  <input
-                    id="amountPaid"
-                    name="amountPaid"
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    max={balanceDue}
-                    required
-                    className="form-input"
-                    placeholder={balanceDue.toFixed(2)}
-                  />
+        {/* Right Column - 1/3 width */}
+        <div className="space-y-6">
+          {/* Totals */}
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Totals</CardTitle>
+              <CardDescription>Financial summary</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <dl className="space-y-2">
+                <div className="flex justify-between">
+                  <dt className="text-fg-secondary">Subtotal</dt>
+                  <dd className="font-medium font-mono">{formatCurrency(invoice.total_amount, "PHP")}</dd>
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="paymentMethodId">Method *</label>
-                  <select
-                    id="paymentMethodId"
-                    name="paymentMethodId"
-                    required
-                    className="form-input form-select"
-                  >
-                    <option value="">Select method</option>
-                    {paymentMethods.map((m) => (
-                      <option key={m.id} value={m.id}>{m.name}</option>
-                    ))}
-                  </select>
+                <div className="flex justify-between">
+                  <dt className="text-fg-secondary">Tax</dt>
+                  <dd className="font-medium font-mono">{formatCurrency(invoice.tax_amount, "PHP")}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-fg-secondary">Discount</dt>
+                  <dd className="font-medium font-mono">{formatCurrency(invoice.discount_amount, "PHP")}</dd>
+                </div>
+              </dl>
+              <div className="pt-3 border-t border-border">
+                <div className="flex justify-between text-lg">
+                  <dt className="font-semibold">Total</dt>
+                  <dd className="font-bold font-mono">{formatCurrency(invoice.total_amount, "PHP")}</dd>
                 </div>
               </div>
-
-              <div className="form-row">
-                <div className="form-group" style={{ flex: 1 }}>
-                  <label className="form-label" htmlFor="paymentDate">Date *</label>
-                  <input
-                    id="paymentDate"
-                    name="paymentDate"
-                    type="date"
-                    required
-                    defaultValue={new Date().toISOString().split("T")[0]}
-                    className="form-input"
-                  />
+              <div className="pt-2">
+                <div className={`flex justify-between text-lg ${balanceDue > 0 ? "text-error" : "text-success"}`}>
+                  <dt className="font-semibold">Balance Due</dt>
+                  <dd className="font-bold font-mono">{formatCurrency(Math.max(0, balanceDue), "PHP")}</dd>
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="remarks">Remarks</label>
-                  <input
-                    id="remarks"
-                    name="remarks"
-                    className="form-input"
-                    placeholder="Optional notes"
-                  />
-                </div>
+                <p className="text-xs text-fg-tertiary mt-1">
+                  {paymentsTotal > 0 ? `Paid: ${formatCurrency(paymentsTotal, "PHP")}` : "No payments yet"}
+                </p>
               </div>
-
-              <button type="submit" className="btn btn-primary btn-sm">
-                Record Payment
-              </button>
-            </form>
-          )}
-        </article>
-      </section>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

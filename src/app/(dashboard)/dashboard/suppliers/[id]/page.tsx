@@ -1,6 +1,19 @@
 import { getSupplierById } from "@/src/features/suppliers/queries";
 import { updateSupplierAction, deleteSupplierAction } from "@/src/features/suppliers/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { notFound, redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Textarea,
+  Button,
+  Badge,
+} from "@/src/components/ui";
+import { formatDate } from "@/src/lib/format";
 
 export default async function SupplierDetailPage({
   params,
@@ -18,206 +31,172 @@ export default async function SupplierDetailPage({
   const canEdit = appUser?.role === "owner" || appUser?.role === "admin";
 
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>{supplier.supplier_name}</h1>
-          <p>Supplier details</p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">{supplier.supplier_name}</h1>
+          <p className="text-fg-secondary mt-1">Supplier details</p>
         </div>
-      </header>
+      </div>
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 0 1 2.25-2.25H19.5A2.25 2.25 0 0 1 21.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 0 0-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-              </svg>
-            </span>
-            <h2>Details</h2>
-          </header>
-
-          <dl className="card-fields">
-            <div>
-              <dt>Name</dt>
-              <dd>{supplier.supplier_name}</dd>
-            </div>
-            <div>
-              <dt>Contact Person</dt>
-              <dd>{supplier.contact_person ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Phone</dt>
-              <dd>{supplier.phone_number ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Email</dt>
-              <dd>{supplier.email ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Address</dt>
-              <dd>{supplier.address ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Notes</dt>
-              <dd>{supplier.remarks ?? <span className="muted">—</span>}</dd>
-            </div>
-            <div>
-              <dt>Created</dt>
-              <dd>{new Date(supplier.created_at).toLocaleDateString()}</dd>
-            </div>
-            <div>
-              <dt>Updated</dt>
-              <dd>{new Date(supplier.updated_at).toLocaleDateString()}</dd>
-            </div>
-          </dl>
-        </article>
-
-        {canEdit && (
-          <article className="dashboard-card">
-            <header className="card-header">
-              <span className="card-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                </svg>
-              </span>
-              <h2>Edit Supplier</h2>
-            </header>
-
-            <form action={updateSupplierAction} className="supplier-form">
-              <input type="hidden" name="id" value={supplier.id} />
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="supplierName">Supplier name *</label>
-                <input
-                  id="supplierName"
-                  name="supplierName"
-                  required
-                  defaultValue={supplier.supplier_name}
-                  autoComplete="name"
-                  className="form-input"
-                  placeholder="ABC Parts Co."
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="contactPerson">Contact person</label>
-                <input
-                  id="contactPerson"
-                  name="contactPerson"
-                  defaultValue={supplier.contact_person ?? ""}
-                  autoComplete="name"
-                  className="form-input"
-                  placeholder="John Smith"
-                />
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label" htmlFor="phone">Phone</label>
-                  <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    defaultValue={supplier.phone_number ?? ""}
-                    autoComplete="tel"
-                    className="form-input"
-                    placeholder="+63 9XX XXX XXXX"
-                  />
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - 2/3 width */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Details */}
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Details</CardTitle>
+              <CardDescription>Supplier information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-sm text-fg-secondary">Name</dt>
+                  <dd className="font-medium text-fg">{supplier.supplier_name}</dd>
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label" htmlFor="email">Email</label>
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    defaultValue={supplier.email ?? ""}
-                    autoComplete="email"
-                    className="form-input"
-                    placeholder="contact@abcpco.com"
-                  />
+                <div>
+                  <dt className="text-sm text-fg-secondary">Contact Person</dt>
+                  <dd className="font-medium text-fg">{supplier.contact_person ?? <span className="text-fg-tertiary">—</span>}</dd>
                 </div>
-              </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Phone</dt>
+                  <dd className="font-medium text-fg">{supplier.phone_number ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Email</dt>
+                  <dd className="font-medium text-fg">{supplier.email ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Address</dt>
+                  <dd className="font-medium text-fg">{supplier.address ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Notes</dt>
+                  <dd className="font-medium text-fg">{supplier.remarks ?? <span className="text-fg-tertiary">—</span>}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Created</dt>
+                  <dd className="font-medium text-fg">{formatDate(supplier.created_at)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-fg-secondary">Updated</dt>
+                  <dd className="font-medium text-fg">{formatDate(supplier.updated_at)}</dd>
+                </div>
+              </dl>
+            </CardContent>
+          </Card>
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="address">Address</label>
-                <textarea
-                  id="address"
-                  name="address"
-                  rows={3}
-                  className="form-input form-textarea"
-                  placeholder="123 Industrial Ave, City, Province"
-                  defaultValue={supplier.address ?? ""}
-                />
-              </div>
+          {/* Edit Form */}
+          {canEdit && (
+            <Card padding="md">
+              <CardHeader>
+                <CardTitle>Edit Supplier</CardTitle>
+                <CardDescription>Update supplier information</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={updateSupplierAction} className="space-y-4">
+                  <input type="hidden" name="id" value={supplier.id} />
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="remarks">Notes</label>
-                <textarea
-                  id="remarks"
-                  name="remarks"
-                  rows={2}
-                  className="form-input form-textarea"
-                  placeholder="Payment terms, preferred contact time..."
-                  defaultValue={supplier.remarks ?? ""}
-                />
-              </div>
+                  <Input
+                    label="Supplier name *"
+                    name="supplierName"
+                    required
+                    defaultValue={supplier.supplier_name}
+                    placeholder="ABC Parts Co."
+                    autoComplete="name"
+                  />
 
-              <div className="form-actions">
-                <button type="submit" className="btn btn-primary">
-                  Save Changes
-                </button>
-                <a href="/dashboard/suppliers" className="btn btn-secondary">
-                  Cancel
-                </a>
-              </div>
-            </form>
+                  <Input
+                    label="Contact person"
+                    name="contactPerson"
+                    defaultValue={supplier.contact_person ?? ""}
+                    placeholder="John Smith"
+                    autoComplete="name"
+                  />
 
-            <div className="danger-zone">
-              <h3 className="danger-title">Danger Zone</h3>
-              <form action={deleteSupplierAction} onSubmit={(e) => {
-                if (!confirm("Delete this supplier? This action cannot be undone.")) {
-                  e.preventDefault();
-                }
-              }}>
-                <input type="hidden" name="id" value={supplier.id} />
-                <button type="submit" className="btn btn-danger">
-                  Delete Supplier
-                </button>
-              </form>
-            </div>
-          </article>
-        )}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Input
+                      label="Phone"
+                      name="phone"
+                      type="tel"
+                      defaultValue={supplier.phone_number ?? ""}
+                      placeholder="+63 9XX XXX XXXX"
+                      autoComplete="tel"
+                    />
 
-        {!canEdit && (
-          <article className="dashboard-card">
-            <header className="card-header">
-              <span className="card-icon" aria-hidden="true">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-                </svg>
-              </span>
-              <h2>Permissions</h2>
-            </header>
-            <div className="card-fields">
-              <div>
-                <dt>Your Role</dt>
-                <dd><span className={`role-badge role-${appUser?.role}`}>{appUser?.role}</span></dd>
-              </div>
-              <div>
-                <dt>Edit Access</dt>
-                <dd className="muted">Only owners and admins can edit suppliers</dd>
-              </div>
-            </div>
-          </article>
-        )}
-      </section>
+                    <Input
+                      label="Email"
+                      name="email"
+                      type="email"
+                      defaultValue={supplier.email ?? ""}
+                      placeholder="contact@abcpco.com"
+                      autoComplete="email"
+                    />
+                  </div>
+
+                  <Textarea
+                    label="Address"
+                    name="address"
+                    rows={3}
+                    defaultValue={supplier.address ?? ""}
+                    placeholder="123 Industrial Ave, City, Province"
+                  />
+
+                  <Textarea
+                    label="Notes"
+                    name="remarks"
+                    rows={2}
+                    defaultValue={supplier.remarks ?? ""}
+                    placeholder="Payment terms, preferred contact time..."
+                  />
+
+                  <div className="flex gap-3 pt-4 border-t border-border">
+                    <Button type="submit" variant="primary">Save Changes</Button>
+                    <Button asChild variant="secondary">
+                      <a href="/dashboard/suppliers">Cancel</a>
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Danger Zone */}
+          {canEdit && (
+            <Card padding="md">
+              <CardHeader>
+                <CardTitle>Danger Zone</CardTitle>
+                <CardDescription>Irreversible actions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={deleteSupplierAction} onSubmit={(e) => {
+                  if (!confirm("Delete this supplier? This action cannot be undone.")) {
+                    e.preventDefault();
+                  }
+                }}>
+                  <input type="hidden" name="id" value={supplier.id} />
+                  <Button type="submit" variant="danger">Delete Supplier</Button>
+                </form>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Right Column - 1/3 width */}
+        <div className="space-y-6">
+          <Card padding="md">
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button asChild variant="secondary" className="w-full justify-start">
+                <a href="/dashboard/suppliers">← Back to Suppliers</a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

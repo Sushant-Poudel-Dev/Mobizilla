@@ -1,5 +1,16 @@
 import { getPurchases } from "@/src/features/purchases/queries";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  Table,
+  Button,
+  StatusBadge,
+} from "@/src/components/ui";
+import { formatDate, formatCurrency } from "@/src/lib/format";
 
 export default async function PurchasesPage({
   searchParams,
@@ -14,88 +25,106 @@ export default async function PurchasesPage({
   }
 
   const appUser = await getCurrentAppUser();
-  const canEdit = appUser?.role === "owner" || appUser?.role === "admin";
+  const canCreate = appUser?.role === "owner" || appUser?.role === "admin";
+
+  const columns = [
+    {
+      key: "purchase_number",
+      header: "Purchase #",
+      render: (purchase: typeof purchases[0]) => (
+        <a href={`/dashboard/purchases/${purchase.id}`} className="font-medium text-accent hover:underline">
+          {purchase.purchase_number}
+        </a>
+      ),
+    },
+    {
+      key: "purchase_date",
+      header: "Date",
+      render: (purchase: typeof purchases[0]) => formatDate(purchase.purchase_date),
+    },
+    {
+      key: "supplier",
+      header: "Supplier",
+      render: (purchase: typeof purchases[0]) => purchase.supplier?.supplier_name ?? "—",
+    },
+    {
+      key: "branch",
+      header: "Branch",
+      render: (purchase: typeof purchases[0]) => purchase.branch?.branch_name ?? "—",
+    },
+    {
+      key: "payment_status",
+      header: "Payment Status",
+      render: (purchase: typeof purchases[0]) => (
+        <StatusBadge status={purchase.payment_status?.name ?? "—"} />
+      ),
+    },
+    {
+      key: "additional_cost",
+      header: "Additional Cost",
+      className: "font-mono font-medium",
+      render: (purchase: typeof purchases[0]) => formatCurrency(purchase.additional_cost ?? 0, "PHP"),
+    },
+    {
+      key: "created_at",
+      header: "Created",
+      render: (purchase: typeof purchases[0]) => formatDate(purchase.created_at),
+    },
+  ];
 
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>Purchases</h1>
-          <p>Manage purchase orders</p>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Purchases</h1>
+          <p className="text-fg-secondary mt-1">Manage purchase orders</p>
         </div>
-        {canEdit && (
-          <a href="/dashboard/purchases/new" className="btn btn-primary">
-            New Purchase
-          </a>
+        {canCreate && (
+          <Button asChild variant="primary">
+            <a href="/dashboard/purchases/new">New Purchase</a>
+          </Button>
         )}
-      </header>
+      </div>
 
+      {/* Messages */}
       {error && (
-        <div className="error-message" role="alert">
+        <div className="mb-6 p-4 bg-error-light border border-error/20 rounded-md text-error text-sm" role="alert">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="success-message" role="status">
+        <div className="mb-6 p-4 bg-success-light border border-success/20 rounded-md text-success text-sm" role="status">
           Purchase created successfully.
         </div>
       )}
 
-      <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr" }}>
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 0 1 2.25-2.25H19.5A2.25 2.25 0 0 1 21.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 0 0-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
+      {/* Purchases Table */}
+      <Card padding="none">
+        <CardHeader className="pb-4">
+          <CardTitle>All Purchases</CardTitle>
+          <CardDescription>Purchase orders and their status</CardDescription>
+        </CardHeader>
+        <Table
+          columns={columns}
+          data={purchases}
+          keyExtractor={(purchase) => purchase.id}
+          emptyState={
+            <div className="text-center py-12">
+              <svg className="w-12 h-12 mx-auto text-fg-tertiary/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
               </svg>
-            </span>
-            <h2>All Purchases</h2>
-          </header>
-
-          <div className="table-wrapper">
-            <table className="purchases-table">
-              <thead>
-                <tr>
-                  <th>Purchase #</th>
-                  <th>Date</th>
-                  <th>Supplier</th>
-                  <th>Branch</th>
-                  <th>Payment Status</th>
-                  <th>Additional Cost</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchases.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="empty-state">
-                      No purchases yet. Create your first purchase order.
-                    </td>
-                  </tr>
-                ) : (
-                  purchases.map((purchase) => (
-                    <tr key={purchase.id}>
-                      <td className="font-medium">{purchase.purchase_number}</td>
-                      <td>{new Date(purchase.purchase_date).toLocaleDateString()}</td>
-                      <td>{purchase.supplier?.supplier_name ?? "—"}</td>
-                      <td>{purchase.branch?.branch_name ?? "—"}</td>
-                      <td><span className="status-badge">{purchase.payment_status?.name ?? "—"}</span></td>
-                      <td>₱{Number(purchase.additional_cost || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                      <td>{new Date(purchase.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </article>
-      </section>
+              <p className="text-fg-secondary">No purchases yet.</p>
+              {canCreate && (
+                <Button asChild variant="primary" className="mt-4 w-auto">
+                  <a href="/dashboard/purchases/new">Create your first purchase</a>
+                </Button>
+              )}
+            </div>
+          }
+        />
+      </Card>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

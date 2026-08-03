@@ -1,97 +1,86 @@
 import { createCustomerAction } from "@/src/features/customers/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Textarea,
+  Button,
+} from "@/src/components/ui";
 
-export default function NewCustomerPage() {
+export default async function NewCustomerPage() {
+  const appUser = await getCurrentAppUser();
+
+  if (!appUser) {
+    redirect("/login");
+  }
+
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>New Customer</h1>
-          <p>Add a new customer to your database</p>
-        </div>
-      </header>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-fg">New Customer</h1>
+        <p className="text-fg-secondary mt-1">Add a new customer to your database</p>
+      </div>
 
-      <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr", maxWidth: "640px" }}>
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </span>
-            <h2>Customer Details</h2>
-          </header>
+      <Card padding="md" className="max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle>Customer Details</CardTitle>
+          <CardDescription>Enter the customer information</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createCustomerAction} className="space-y-4">
+            <Input
+              label="Customer name *"
+              name="customerName"
+              required
+              placeholder="John Doe"
+              autoComplete="name"
+            />
 
-          <form action={createCustomerAction} className="customer-form">
-            <div className="form-group">
-              <label className="form-label" htmlFor="customerName">Customer name *</label>
-              <input
-                id="customerName"
-                name="customerName"
-                required
-                autoComplete="name"
-                className="form-input"
-                placeholder="John Doe"
-              />
-            </div>
+            <Input
+              label="Phone"
+              name="phone"
+              type="tel"
+              placeholder="+63 9XX XXX XXXX"
+              autoComplete="tel"
+            />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="phone">Phone</label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                autoComplete="tel"
-                className="form-input"
-                placeholder="+63 9XX XXX XXXX"
-              />
-            </div>
+            <Input
+              label="Email"
+              name="email"
+              type="email"
+              placeholder="john@example.com"
+              autoComplete="email"
+            />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                className="form-input"
-                placeholder="john@example.com"
-              />
-            </div>
+            <Textarea
+              label="Address"
+              name="address"
+              rows={3}
+              placeholder="123 Main St, City, Province"
+            />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="address">Address</label>
-              <textarea
-                id="address"
-                name="address"
-                rows={3}
-                className="form-input form-textarea"
-                placeholder="123 Main St, City, Province"
-              />
-            </div>
+            <Textarea
+              label="Notes"
+              name="notes"
+              rows={2}
+              placeholder="Preferred contact time, special instructions..."
+            />
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="notes">Notes</label>
-              <textarea
-                id="notes"
-                name="notes"
-                rows={2}
-                className="form-input form-textarea"
-                placeholder="Preferred contact time, special instructions..."
-              />
-            </div>
-
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Create Customer
-              </button>
-              <a href="/dashboard/customers" className="btn btn-secondary">
-                Cancel
-              </a>
+            <div className="flex gap-3 pt-4 border-t border-border">
+              <Button type="submit" variant="primary">Create Customer</Button>
+              <Button asChild variant="secondary">
+                <a href="/dashboard/customers">Cancel</a>
+              </Button>
             </div>
           </form>
-        </article>
-      </section>
+        </CardContent>
+      </Card>
     </main>
   );
 }

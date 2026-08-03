@@ -6,7 +6,19 @@ import {
   getConditions,
 } from "@/src/features/purchases/queries";
 import { createPurchaseAction } from "@/src/features/purchases/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Input,
+  Select,
+  Button,
+} from "@/src/components/ui";
+import { type SelectOption } from "@/src/components/ui/Select";
 import { LineItemsForm } from "@/src/components/purchases/LineItemsForm";
 
 export default async function NewPurchasePage() {
@@ -25,136 +37,102 @@ export default async function NewPurchasePage() {
     redirect("/dashboard/purchases");
   }
 
+  const supplierOptions: SelectOption[] = [
+    { value: "", label: "Select supplier" },
+    ...suppliers.map((s) => ({ value: s.id, label: s.supplier_name })),
+  ];
+
+  const branchOptions: SelectOption[] = [
+    { value: "", label: "Select branch" },
+    ...branches.map((b) => ({ value: b.id, label: b.branch_name })),
+  ];
+
+  const paymentStatusOptions: SelectOption[] = [
+    { value: "", label: "Select status" },
+    ...paymentStatuses.map((ps) => ({ value: ps.id, label: ps.name })),
+  ];
+
   return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>New Purchase</h1>
-          <p>Create a purchase order with line items</p>
-        </div>
-      </header>
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-fg">New Purchase</h1>
+        <p className="text-fg-secondary mt-1">Create a purchase order with line items</p>
+      </div>
 
-      <section className="dashboard-grid" style={{ gridTemplateColumns: "1fr", maxWidth: "900px" }}>
-        <article className="dashboard-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </span>
-            <h2>Purchase Details</h2>
-          </header>
+      <Card padding="md" className="max-w-3xl mx-auto">
+        <CardHeader>
+          <CardTitle>Purchase Details</CardTitle>
+          <CardDescription>Enter purchase order information and line items</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createPurchaseAction} className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Supplier *"
+                name="supplierId"
+                required
+                options={supplierOptions}
+              />
 
-          <form action={createPurchaseAction} className="purchase-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="supplierId">Supplier *</label>
-                <select
-                  id="supplierId"
-                  name="supplierId"
-                  required
-                  className="form-input form-select"
-                >
-                  <option value="">Select supplier</option>
-                  {suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>{s.supplier_name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="branchId">Branch *</label>
-                <select
-                  id="branchId"
-                  name="branchId"
-                  required
-                  className="form-input form-select"
-                >
-                  <option value="">Select branch</option>
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>{b.branch_name}</option>
-                  ))}
-                </select>
-              </div>
+              <Select
+                label="Branch *"
+                name="branchId"
+                required
+                options={branchOptions}
+              />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="purchaseNumber">Purchase # *</label>
-                <input
-                  id="purchaseNumber"
-                  name="purchaseNumber"
-                  required
-                  autoComplete="off"
-                  className="form-input"
-                  placeholder="PO-2024-001"
-                />
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Input
+                label="Purchase # *"
+                name="purchaseNumber"
+                required
+                placeholder="PO-2024-001"
+                autoComplete="off"
+              />
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="purchaseDate">Purchase date *</label>
-                <input
-                  id="purchaseDate"
-                  name="purchaseDate"
-                  type="date"
-                  required
-                  defaultValue={new Date().toISOString().split("T")[0]}
-                  className="form-input"
-                />
-              </div>
+              <Input
+                label="Purchase date *"
+                name="purchaseDate"
+                type="date"
+                required
+                defaultValue={new Date().toISOString().split("T")[0]}
+              />
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label" htmlFor="paymentStatusId">Payment status *</label>
-                <select
-                  id="paymentStatusId"
-                  name="paymentStatusId"
-                  required
-                  className="form-input form-select"
-                >
-                  <option value="">Select status</option>
-                  {paymentStatuses.map((ps) => (
-                    <option key={ps.id} value={ps.id}>{ps.name}</option>
-                  ))}
-                </select>
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Select
+                label="Payment status *"
+                name="paymentStatusId"
+                required
+                options={paymentStatusOptions}
+              />
 
-              <div className="form-group">
-                <label className="form-label" htmlFor="additionalCost">Additional cost</label>
-                <input
-                  id="additionalCost"
-                  name="additionalCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue="0"
-                  className="form-input"
-                  placeholder="0.00"
-                />
-              </div>
+              <Input
+                label="Additional cost"
+                name="additionalCost"
+                type="number"
+                step="0.01"
+                min="0"
+                defaultValue="0"
+                placeholder="0.00"
+              />
             </div>
 
-            <hr className="section-divider" />
+            <hr className="border-border" />
 
             <LineItemsForm inventoryItems={inventoryItems} conditions={conditions} />
 
-            <div className="form-actions">
-              <button type="submit" className="btn btn-primary">
-                Create Purchase
-              </button>
-              <a href="/dashboard/purchases" className="btn btn-secondary">
-                Cancel
-              </a>
+            <div className="flex gap-3 pt-4 border-t border-border">
+              <Button type="submit" variant="primary">Create Purchase</Button>
+              <Button asChild variant="secondary">
+                <a href="/dashboard/purchases">Cancel</a>
+              </Button>
             </div>
           </form>
-        </article>
-      </section>
+        </CardContent>
+      </Card>
     </main>
   );
-}
-
-async function getCurrentAppUser() {
-  const { getCurrentAppUser } = await import("@/src/lib/data/currentUser");
-  return getCurrentAppUser();
 }

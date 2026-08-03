@@ -1,6 +1,19 @@
 import { getCustomers } from "@/src/features/customers/queries";
 import { createCustomerAction } from "@/src/features/customers/actions";
+import { getCurrentAppUser } from "@/src/lib/data/currentUser";
 import { redirect } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  Table,
+  Input,
+  Textarea,
+  Button,
+} from "@/src/components/ui";
+import { formatDate } from "@/src/lib/format";
 
 export default async function CustomersPage({
   searchParams,
@@ -14,147 +27,136 @@ export default async function CustomersPage({
     redirect("/login");
   }
 
-  return (
-    <main className="dashboard-content">
-      <header className="dashboard-header">
-        <div className="dashboard-title">
-          <h1>Customers</h1>
-          <p>Manage your customer database</p>
-        </div>
-      </header>
+  const columns = [
+    {
+      key: "customer_name",
+      header: "Name",
+      render: (customer: typeof customers[0]) => <span className="font-medium">{customer.customer_name}</span>,
+    },
+    {
+      key: "phone",
+      header: "Phone",
+      render: (customer: typeof customers[0]) => customer.phone ?? "—",
+    },
+    {
+      key: "email",
+      header: "Email",
+      render: (customer: typeof customers[0]) => customer.email ?? "—",
+    },
+    {
+      key: "address",
+      header: "Address",
+      render: (customer: typeof customers[0]) => customer.address ?? "—",
+    },
+    {
+      key: "created_at",
+      header: "Created",
+      render: (customer: typeof customers[0]) => formatDate(customer.created_at),
+    },
+  ];
 
+  return (
+    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-fg">Customers</h1>
+          <p className="text-fg-secondary mt-1">Manage your customer database</p>
+        </div>
+      </div>
+
+      {/* Messages */}
       {error && (
-        <div className="error-message" role="alert">
+        <div className="mb-6 p-4 bg-error-light border border-error/20 rounded-md text-error text-sm" role="alert">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="success-message" role="status">
+        <div className="mb-6 p-4 bg-success-light border border-success/20 rounded-md text-success text-sm" role="status">
           Customer saved successfully.
         </div>
       )}
 
-      <section className="dashboard-grid">
-        <article className="dashboard-card customers-table-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM15.75 19.5a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM21 15.75a3.75 3.75 0 0 1-7.5 0H3a3.75 3.75 0 0 1 0-7.5h10.5a3.75 3.75 0 0 1 7.5 0Z" />
-              </svg>
-            </span>
-            <h2>All Customers</h2>
-          </header>
+      {/* Customers Table + Add Form */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Customers Table - 2/3 width */}
+        <div className="lg:col-span-2">
+          <Card padding="none">
+            <CardHeader className="pb-4">
+              <CardTitle>All Customers</CardTitle>
+              <CardDescription>Customer database</CardDescription>
+            </CardHeader>
+            <Table
+              columns={columns}
+              data={customers}
+              keyExtractor={(customer) => customer.id}
+              emptyState={
+                <div className="text-center py-12">
+                  <svg className="w-12 h-12 mx-auto text-fg-tertiary/50 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0ZM15.75 19.5a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0ZM21 15.75a3.75 3.75 0 01-7.5 0H3a3.75 3.75 0 010-7.5h10.5a3.75 3.75 0 017.5 0Z" />
+                  </svg>
+                  <p className="text-fg-secondary">No customers yet.</p>
+                  <p className="text-fg-tertiary text-sm mt-1">Add your first customer using the form.</p>
+                </div>
+              }
+            />
+          </Card>
+        </div>
 
-          <div className="table-wrapper">
-            <table className="customers-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Phone</th>
-                  <th>Email</th>
-                  <th>Address</th>
-                  <th>Created</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="empty-state">
-                      No customers yet. Add your first customer using the form.
-                    </td>
-                  </tr>
-                ) : (
-                  customers.map((customer) => (
-                    <tr key={customer.id}>
-                      <td className="font-medium">{customer.customer_name}</td>
-                      <td>{customer.phone ?? "—"}</td>
-                      <td>{customer.email ?? "—"}</td>
-                      <td>{customer.address ?? "—"}</td>
-                      <td>{new Date(customer.created_at).toLocaleDateString()}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </article>
-
-        <article className="dashboard-card invite-form-card">
-          <header className="card-header">
-            <span className="card-icon" aria-hidden="true">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            </span>
-            <h2>Add Customer</h2>
-          </header>
-
-          <form action={createCustomerAction} className="customer-form">
-            <div className="form-group">
-              <label className="form-label" htmlFor="customerName">Customer name *</label>
-              <input
-                id="customerName"
+        {/* Add Customer Form - 1/3 width */}
+        <Card padding="md">
+          <CardHeader>
+            <CardTitle>Add Customer</CardTitle>
+            <CardDescription>Create a new customer record</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={createCustomerAction} className="space-y-4">
+              <Input
+                label="Customer name *"
                 name="customerName"
                 required
-                autoComplete="name"
-                className="form-input"
                 placeholder="John Doe"
+                autoComplete="name"
               />
-            </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="phone">Phone</label>
-              <input
-                id="phone"
+              <Input
+                label="Phone"
                 name="phone"
                 type="tel"
-                autoComplete="tel"
-                className="form-input"
                 placeholder="+63 9XX XXX XXXX"
+                autoComplete="tel"
               />
-            </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="email">Email</label>
-              <input
-                id="email"
+              <Input
+                label="Email"
                 name="email"
                 type="email"
-                autoComplete="email"
-                className="form-input"
                 placeholder="john@example.com"
+                autoComplete="email"
               />
-            </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="address">Address</label>
-              <textarea
-                id="address"
+              <Textarea
+                label="Address"
                 name="address"
                 rows={3}
-                className="form-input form-textarea"
                 placeholder="123 Main St, City, Province"
               />
-            </div>
 
-            <div className="form-group">
-              <label className="form-label" htmlFor="notes">Notes</label>
-              <textarea
-                id="notes"
+              <Textarea
+                label="Notes"
                 name="notes"
                 rows={2}
-                className="form-input form-textarea"
                 placeholder="Preferred contact time, special instructions..."
               />
-            </div>
 
-            <button type="submit" className="btn btn-primary">
-              Add Customer
-            </button>
-          </form>
-        </article>
-      </section>
+              <Button type="submit" variant="primary" className="w-full">
+                Add Customer
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </main>
   );
 }
