@@ -20,7 +20,7 @@ import {
   StatusBadge,
 } from "@/src/components/ui";
 import { formatDate } from "@/src/lib/format";
-import { type SelectOption } from "@/src/components/ui/Select";
+import { type SelectOption } from "@/src/components/ui";
 
 export default async function RepairsPage({
   searchParams,

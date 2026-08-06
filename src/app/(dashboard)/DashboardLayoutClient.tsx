@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sidebar } from "@/src/components/ui/Sidebar";
-import { DashboardHeader } from "@/src/components/ui/DashboardHeader";
-import { UserMenu } from "@/src/components/ui/UserMenu";
+import { Sidebar } from "@/src/components/ui";
+import { DashboardHeader } from "@/src/components/ui";
+import { UserMenu } from "@/src/components/ui";
 
 interface AppUser {
   full_name: string;

@@ -18,7 +18,7 @@ import {
   Textarea,
   Button,
 } from "@/src/components/ui";
-import { type SelectOption } from "@/src/components/ui/Select";
+import { type SelectOption } from "@/src/components/ui";
 
 export default async function NewRepairTicketPage() {
   const [customers, deviceModels, statuses, branches] = await Promise.all([

@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
-import { Card } from "./Card";
-import { Button } from "./Button";
+import { Card } from "../primitives/Card";
+import { Button } from "../primitives/Button";
 
 export type StatCardChangeType = "up" | "down" | "neutral";
 

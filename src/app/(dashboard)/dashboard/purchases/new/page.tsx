@@ -18,7 +18,7 @@ import {
   Select,
   Button,
 } from "@/src/components/ui";
-import { type SelectOption } from "@/src/components/ui/Select";
+import { type SelectOption } from "@/src/components/ui";
 import { LineItemsForm } from "@/src/components/purchases/LineItemsForm";
 
 export default async function NewPurchasePage() {

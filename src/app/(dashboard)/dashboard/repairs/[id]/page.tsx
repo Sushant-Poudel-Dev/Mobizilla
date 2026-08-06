@@ -23,7 +23,7 @@ import {
   Textarea,
 } from "@/src/components/ui";
 import { formatCurrency, formatDate } from "@/src/lib/format";
-import { type SelectOption } from "@/src/components/ui/Select";
+import { type SelectOption } from "@/src/components/ui";
 
 export default async function RepairTicketDetailPage({
   params,
