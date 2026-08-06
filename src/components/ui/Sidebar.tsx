@@ -85,15 +85,38 @@ const navigationIcons: Record<string, React.ReactNode> = {
   ),
 };
 
+const chevronDown = (
+  <svg className="w-4 h-4 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+  </svg>
+);
+
+const chevronRight = (
+  <svg className="w-4 h-4 transition-transform duration-200 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+  </svg>
+);
+
+const sawIcon = (
+  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3l18 18M3 21l18-18M12 3v18M3 12h18" />
+  </svg>
+);
+
 export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const [expandedSections, setExpandedSections] = useState<string[]>(navigation.map(s => s.label));
+
+  const toggleSection = (label: string) => {
+    setExpandedSections(prev => prev.includes(label) ? prev.filter(s => s !== label) : [...prev, label]);
+  };
 
   return (
     <>
       {/* Backdrop - only on mobile when open */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm lg:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -102,24 +125,29 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
       {/* Sidebar - always fixed, visible on lg+, drawer on mobile */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen bg-bg-elevated border-r border-border transition-transform duration-300 ease-out",
+          "fixed top-0 left-0 z-50 h-screen bg-white border-r border-slate-200 transition-transform duration-300 ease-out",
           "hidden lg:block",
           "translate-x-full lg:translate-x-0",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
-        style={{ width: "260px" }}
+        style={{ width: "250px" }}
+        aria-label="Main navigation"
       >
         <div className="flex flex-col h-full">
           {/* Logo/Brand */}
-          <div className="flex items-center justify-between h-16 px-4 border-b border-border">
-            <Link href="/dashboard" className="flex items-center gap-2">
-              <svg className="w-8 h-8 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 012.25-2.25H19.5A2.25 2.25 0 0121.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 00-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-              </svg>
-              <span className="font-semibold text-lg text-fg">Mobizilla</span>
+          <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200">
+            <Link href="/dashboard" className="flex items-center gap-3" aria-label="Mobizilla Home">
+              <div className="relative w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
+                <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 012.25-2.25H19.5A2.25 2.25 0 0121.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 00-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
+                </svg>
+                {/* Quarry block accent */}
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm rotate-3" />
+              </div>
+              <span className="font-semibold text-lg text-slate-900 tracking-tight">Mobizilla</span>
             </Link>
             <button
-              className="lg:hidden p-1.5 rounded-md text-fg-secondary hover:bg-bg-hover hover:text-fg transition-colors"
+              className="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
               onClick={onClose}
               aria-label="Close sidebar"
             >
@@ -129,44 +157,78 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
             </button>
           </div>
 
-          {/* Navigation with sections */}
-          <nav className="flex-1 p-3 space-y-6 overflow-y-auto" aria-label="Main navigation">
-            {navigation.map((section) => (
-              <div key={section.label}>
-                <h3 className="px-3 text-xs font-semibold text-fg-tertiary uppercase tracking-wider mb-2">
-                  {section.label}
-                </h3>
-                <div className="space-y-1">
-                  {section.items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
-                    const Icon = navigationIcons[item.icon];
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.href}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                          isActive
-                            ? "bg-accent-light text-accent"
-                            : "text-fg-secondary hover:bg-bg-hover hover:text-fg"
-                        )}
-                        onClick={onClose}
-                      >
-                        {Icon}
-                        <span className="truncate">{item.name}</span>
-                      </Link>
-                    );
-                  })}
+          {/* Navigation with collapsible sections */}
+          <nav className="flex-1 p-3 space-y-4 overflow-y-auto" aria-label="Main navigation">
+            {navigation.map((section) => {
+              const isExpanded = expandedSections.includes(section.label);
+              const hasActiveItem = section.items.some(item => 
+                pathname === item.href || pathname.startsWith(item.href + "/")
+              );
+              
+              return (
+                <div key={section.label} className="group">
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(section.label)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors",
+                      "text-slate-500 hover:text-slate-900 hover:bg-slate-100",
+                      hasActiveItem && "text-slate-900"
+                    )}
+                    aria-expanded={isExpanded}
+                    aria-controls={`${section.label}-items`}
+                  >
+                    <span className="flex items-center gap-2 truncate">
+                      {isExpanded ? chevronDown : chevronRight}
+                      <span className="uppercase tracking-wider text-xs">{section.label}</span>
+                    </span>
+                  </button>
+                  
+                  <div 
+                    id={`${section.label}-items`}
+                    className={cn(
+                      "overflow-hidden transition-all duration-200 ease-out",
+                      isExpanded ? "max-h-96 opacity-100 mt-1" : "max-h-0 opacity-0"
+                    )}
+                    role="region"
+                    aria-label={`${section.label} navigation items`}
+                  >
+                    <div className="space-y-1 pl-2 border-l border-slate-200/50 ml-5">
+                      {section.items.map((item) => {
+                        const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                        const Icon = navigationIcons[item.icon];
+                        return (
+                          <Link
+                            key={item.name}
+                            href={item.href}
+                            className={cn(
+                              "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
+                              isActive
+                                ? "text-slate-900 bg-slate-100"
+                                : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                            )}
+                            onClick={onClose}
+                            aria-current={isActive ? "page" : undefined}
+                          >
+                            <span className="flex-shrink-0 text-slate-400 group-hover:text-slate-600 transition-colors">
+                              {Icon}
+                            </span>
+                            <span className="truncate">{item.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </nav>
 
           {/* Footer */}
-          <div className="p-3 border-t border-border">
-            <p className="text-xs text-fg-tertiary text-center">
-              Mobizilla v1.0.0
-            </p>
+          <div className="p-4 border-t border-slate-200">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-slate-500">v1.0.0</span>
+            </div>
           </div>
         </div>
       </aside>
