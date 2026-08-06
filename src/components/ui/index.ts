@@ -7,11 +7,13 @@ export { Table, TableToolbar, type TableProps, type TableColumn } from "../primi
 export { Badge, StatusBadge, type BadgeProps, type BadgeVariant, type BadgeSize } from "../primitives/Badge";
 export { DropdownMenu, type DropdownMenuProps, type DropdownItem } from "../primitives/DropdownMenu";
 export { Avatar, AvatarGroup, type AvatarProps, type AvatarSize } from "../primitives/Avatar";
+export { SearchInput, type SearchInputProps } from "../primitives/SearchInput";
 
 // Layout
 export { Sidebar } from "../layout/Sidebar";
 export { DashboardHeader } from "../layout/DashboardHeader";
 export { UserMenu } from "../layout/UserMenu";
+export { InlineUserInfo, type InlineUserInfoProps } from "../layout/InlineUserInfo";
 
 // Data Display
 export { ActivityFeed, type ActivityFeedProps, type ActivityItem } from "../data-display/ActivityFeed";
@@ -26,6 +28,6 @@ export { SimpleStatCard } from "../data-display/SimpleStatCard";
 export { DashboardHero } from "../dashboard/DashboardHero";
 export { MetricsGrid } from "../dashboard/MetricsGrid";
 export { StatsSection } from "../dashboard/StatsSection";
-export { ActivitySection } from "../dashboard/ActivitySection";
+export { RevenueCard } from "../dashboard/RevenueCard";
 export { QuickActions } from "../dashboard/QuickActions";
 export { SummarySection } from "../dashboard/SummarySection";

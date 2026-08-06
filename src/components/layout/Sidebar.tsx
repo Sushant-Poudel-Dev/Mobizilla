@@ -172,7 +172,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                     onClick={() => toggleSection(section.label)}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors",
-                      "text-slate-500 hover:text-slate-900 hover:bg-slate-100",
+                      "text-slate-900 hover:text-slate-900 hover:bg-slate-100",
                       hasActiveItem && "text-slate-900"
                     )}
                     aria-expanded={isExpanded}
@@ -180,7 +180,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                   >
                     <span className="flex items-center gap-2 truncate">
                       {isExpanded ? chevronDown : chevronRight}
-                      <span className="uppercase tracking-wider text-xs">{section.label}</span>
+                      <span className="uppercase tracking-wider text-xs text-slate-900">{section.label}</span>
                     </span>
                   </button>
                   
@@ -205,12 +205,12 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
                               "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150",
                               isActive
                                 ? "text-slate-900 bg-slate-100"
-                                : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
+                                : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                             )}
                             onClick={onClose}
                             aria-current={isActive ? "page" : undefined}
                           >
-                            <span className="flex-shrink-0 text-slate-400 group-hover:text-slate-600 transition-colors">
+                            <span className="flex-shrink-0 text-slate-600 group-hover:text-slate-900 transition-colors">
                               {Icon}
                             </span>
                             <span className="truncate">{item.name}</span>

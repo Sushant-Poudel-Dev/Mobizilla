@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Sidebar } from "@/src/components/ui";
 import { DashboardHeader } from "@/src/components/ui";
-import { UserMenu } from "@/src/components/ui";
 
 interface AppUser {
   full_name: string;
@@ -34,14 +33,9 @@ export function DashboardLayoutClient({ appUser, children }: DashboardLayoutClie
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="lg:pl-[260px] min-h-screen flex flex-col">
         <DashboardHeader
+          user={{ full_name: appUser.full_name, role: appUser.role }}
           onMenuClick={() => setSidebarOpen(true)}
-        >
-          <UserMenu
-            name={appUser.full_name}
-            email={appUser.email}
-            role={appUser.role}
-          />
-        </DashboardHeader>
+        />
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
