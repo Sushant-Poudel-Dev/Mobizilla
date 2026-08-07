@@ -11,3 +11,6 @@ export { ActivityFeed, type ActivityFeedProps, type ActivityItem } from "./Activ
 export { UserMenu } from "./UserMenu";
 export { Sidebar } from "./Sidebar";
 export { DashboardHeader } from "./DashboardHeader";
+export { KPICard, Sparkline, TrendBadge } from "./KPICard";
+export { AlertStrip, AlertBanner } from "./AlertStrip";
+export { RoleWidget, RoleWidgetItem, RoleWidgetTable, RoleWidgetChart, RoleWidgetSummary } from "./RoleWidget";
