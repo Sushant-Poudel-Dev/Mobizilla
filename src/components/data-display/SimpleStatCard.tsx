@@ -92,7 +92,7 @@ export function SimpleStatCard({
         <div className='flex items-start justify-between gap-3'>
           <div className='flex items-center gap-2 min-w-0 flex-1'>
             <div
-              className='flex-shrink-0 w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600'
+              className='shrink-0 w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600'
               aria-hidden='true'
             >
               {icon}
@@ -103,7 +103,7 @@ export function SimpleStatCard({
               </h3>
             </div>
           </div>
-          <div className='flex-shrink-0'>{infoIcon}</div>
+          <div className='shrink-0'>{infoIcon}</div>
         </div>
         <div className='flex items-baseline justify-between gap-3 mt-2'>
           <span className='text-2xl font-semibold text-slate-900 tabular-nums'>
