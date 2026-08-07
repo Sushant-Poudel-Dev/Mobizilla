@@ -1,36 +1,57 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-sans:
+    "Roboto", "Helvetica Neue", Helvetica, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --color-bg: #ffffff;
-  --color-bg-elevated: #fafafa;
+  --color-bg: #fafafa;
+  --color-bg-elevated: #ffffff;
   --color-bg-hover: #f5f5f5;
   --color-border: #e5e5e5;
   --color-border-bright: #d4d4d4;
   --color-fg: #171717;
   --color-fg-secondary: #525252;
   --color-fg-tertiary: #a3a3a3;
-  --color-accent: #0066cc;
-  --color-accent-hover: #0052a3;
-  --color-accent-light: #e6f0fa;
+
+  /* Brand colors from logo */
+  --color-primary: #0999d7;
+  --color-primary-hover: #0888c0;
+  --color-primary-light: #e8f5fc;
+  --color-primary-glow: rgba(9, 153, 215, 0.15);
+
+  --color-secondary: #009e54;
+  --color-secondary-hover: #008d4a;
+  --color-secondary-light: #e8f7ed;
+  --color-secondary-glow: rgba(0, 158, 84, 0.15);
+
+  --color-accent: #0999d7;
+  --color-accent-hover: #0888c0;
+  --color-accent-light: #e8f5fc;
   --color-error: #dc2626;
   --color-error-light: #fef2f2;
-  --color-success: #16a34a;
-  --color-success-light: #f0fdf4;
+  --color-success: #009e54;
+  --color-success-light: #e8f7ed;
   --color-warning: #d97706;
   --color-warning-light: #fffbeb;
   --color-info: #0ea5e9;
   --color-info-light: #eff6ff;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
-  --shadow-glow: 0 0 24px rgba(0, 102, 204, 0.12), 0 0 48px rgba(0, 102, 204, 0.06);
+  --shadow-card-hover:
+    0 2px 8px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --shadow-primary:
+    0 4px 16px rgba(9, 153, 215, 0.2), 0 0 24px rgba(9, 153, 215, 0.1);
+  --shadow-secondary:
+    0 4px 16px rgba(0, 158, 84, 0.2), 0 0 24px rgba(0, 158, 84, 0.1);
+  --shadow-glow:
+    0 0 24px rgba(9, 153, 215, 0.12), 0 0 48px rgba(9, 153, 215, 0.06);
 
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
+  --radius-xl: 24px;
 
   --transition-fast: 120ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --transition-base: 200ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -58,7 +79,7 @@
   }
 
   ::selection {
-    background: var(--color-accent);
+    background: var(--color-primary);
     color: white;
   }
 
@@ -85,8 +106,12 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideInRight {
@@ -97,6 +122,17 @@
     to {
       opacity: 1;
       transform: translateX(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
     }
   }
 
@@ -115,18 +151,63 @@
     opacity: 0;
   }
 
-  .delay-1 { animation-delay: 60ms; }
-  .delay-2 { animation-delay: 120ms; }
-  .delay-3 { animation-delay: 180ms; }
-  .delay-4 { animation-delay: 240ms; }
-  .delay-5 { animation-delay: 300ms; }
-  .delay-6 { animation-delay: 360ms; }
-  .delay-7 { animation-delay: 420ms; }
-  .delay-8 { animation-delay: 480ms; }
+  .animate-scale-in {
+    animation: scaleIn var(--transition-base) forwards;
+    opacity: 0;
+  }
+
+  .delay-1 {
+    animation-delay: 60ms;
+  }
+  .delay-2 {
+    animation-delay: 120ms;
+  }
+  .delay-3 {
+    animation-delay: 180ms;
+  }
+  .delay-4 {
+    animation-delay: 240ms;
+  }
+  .delay-5 {
+    animation-delay: 300ms;
+  }
+  .delay-6 {
+    animation-delay: 360ms;
+  }
+  .delay-7 {
+    animation-delay: 420ms;
+  }
+  .delay-8 {
+    animation-delay: 480ms;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .bg-gradient-primary {
+    background: linear-gradient(
+      135deg,
+      var(--color-primary) 0%,
+      var(--color-secondary) 100%
+    );
+  }
+
+  .bg-gradient-primary-light {
+    background: linear-gradient(
+      135deg,
+      var(--color-primary-light) 0%,
+      var(--color-secondary-light) 100%
+    );
+  }
+
+  .shadow-primary {
+    box-shadow: var(--shadow-primary);
+  }
+
+  .shadow-secondary {
+    box-shadow: var(--shadow-secondary);
   }
 }

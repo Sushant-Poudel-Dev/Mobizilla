@@ -17,22 +17,37 @@ export interface DropdownMenuProps {
   className?: string;
 }
 
-export function DropdownMenu({ trigger, items, align = "right", className = "" }: DropdownMenuProps) {
+export function DropdownMenu({
+  trigger,
+  items,
+  align = "right",
+  className = "",
+}: DropdownMenuProps) {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        if (triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        if (
+          triggerRef.current &&
+          !triggerRef.current.contains(event.target as Node)
+        ) {
           setOpen(false);
         }
       }
     }
 
     document.addEventListener("mousedown", handleClickOutside as EventListener);
-    return () => document.removeEventListener("mousedown", handleClickOutside as EventListener);
+    return () =>
+      document.removeEventListener(
+        "mousedown",
+        handleClickOutside as EventListener,
+      );
   }, []);
 
   const triggerRect = triggerRef.current?.getBoundingClientRect();
@@ -40,26 +55,40 @@ export function DropdownMenu({ trigger, items, align = "right", className = "" }
   const scrollX = window.scrollX;
 
   return (
-    <div className="relative inline-block" ref={triggerRef}>
-      <div onClick={() => setOpen(!open)} className="cursor-pointer">{trigger}</div>
+    <div
+      className='relative inline-block'
+      ref={triggerRef}
+    >
+      <div
+        onClick={() => setOpen(!open)}
+        className='cursor-pointer'
+      >
+        {trigger}
+      </div>
       {open && triggerRect && (
         <div
           ref={dropdownRef}
           className={`
-            fixed z-50 min-w-[180px] bg-bg-elevated border border-border rounded-lg shadow-card-hover
+            fixed z-50 min-w-45 bg-bg-elevated border border-border rounded-lg shadow-card-hover
             py-1 animate-fade-in
             ${align === "right" ? "right-0" : "left-0"}
           `}
           style={{
             top: triggerRect.bottom + scrollY + 4,
             left: align === "left" ? triggerRect.left + scrollX : undefined,
-            right: align === "right" ? window.innerWidth - (triggerRect.right + scrollX) : undefined,
+            right:
+              align === "right"
+                ? window.innerWidth - (triggerRect.right + scrollX)
+                : undefined,
           }}
         >
           {items.map((item, index) => (
             <button
               key={index}
-              onClick={() => { item.onSelect(); setOpen(false); }}
+              onClick={() => {
+                item.onSelect();
+                setOpen(false);
+              }}
               disabled={item.disabled}
               className={`
                 w-full px-4 py-2 text-sm text-left flex items-center gap-2
@@ -68,7 +97,9 @@ export function DropdownMenu({ trigger, items, align = "right", className = "" }
                 ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}
               `}
             >
-              {item.icon && <span className="w-4 h-4 flex-shrink-0">{item.icon}</span>}
+              {item.icon && (
+                <span className='w-4 h-4 shrink-0'>{item.icon}</span>
+              )}
               {item.label}
             </button>
           ))}

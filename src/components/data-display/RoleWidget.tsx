@@ -2,8 +2,8 @@
 
 import { type ReactNode } from "react";
 import { cn } from "@/src/lib/utils";
-import { Card } from "./Card";
-import { Button } from "./Button";
+import { Card } from "../primitives/Card";
+import { Button } from "../primitives/Button";
 import { formatCurrency } from "@/src/lib/format";
 import { Sparkline } from "./KPICard";
 

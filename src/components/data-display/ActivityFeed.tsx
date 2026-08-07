@@ -1,7 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Card, CardHeader, CardTitle } from "./Card";
+import { Card, CardHeader, CardTitle } from "../primitives/Card";
 import { formatRelativeTime } from "@/src/lib/format";
 
 export interface ActivityItem {
@@ -65,9 +65,10 @@ interface ActivityFeedProps {
   activities: ActivityItem[];
   maxItems?: number;
   className?: string;
+  hideHeader?: boolean;
 }
 
-export function ActivityFeed({ activities, maxItems = 8, className = "" }: ActivityFeedProps) {
+export function ActivityFeed({ activities, maxItems = 8, className = "", hideHeader = false }: ActivityFeedProps) {
   const displayActivities = activities.slice(0, maxItems);
 
   if (displayActivities.length === 0) {
@@ -85,9 +86,11 @@ export function ActivityFeed({ activities, maxItems = 8, className = "" }: Activ
 
   return (
     <Card padding="none" className={className}>
-      <CardHeader className="px-6 py-4">
-        <CardTitle>Recent Activity</CardTitle>
-      </CardHeader>
+      {!hideHeader && (
+        <CardHeader className="px-6 py-4">
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+      )}
       <div className="divide-y divide-border">
         {displayActivities.map((activity, index) => (
           <a

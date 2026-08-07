@@ -15,7 +15,7 @@ import {
   Badge,
 } from "@/src/components/ui";
 import { formatDate } from "@/src/lib/format";
-import { type SelectOption } from "@/src/components/ui/Select";
+import { type SelectOption } from "@/src/components/ui";
 
 const roleLabels: Record<string, string> = {
   owner: "Owner",

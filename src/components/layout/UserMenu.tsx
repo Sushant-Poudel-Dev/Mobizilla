@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { Avatar } from "./Avatar";
-import { Button } from "./Button";
+import { Avatar } from "../primitives/Avatar";
+import { Button } from "../primitives/Button";
 
 interface UserMenuProps {
   name: string;
