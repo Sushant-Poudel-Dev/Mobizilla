@@ -105,10 +105,13 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <select className="px-3 py-1.5 text-sm border border-slate-300 rounded-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+          <select
+            defaultValue="month"
+            className="px-3 py-1.5 text-sm border border-slate-300 rounded-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
             <option value="today">Today</option>
             <option value="week">This Week</option>
-            <option value="month" selected>This Month</option>
+            <option value="month">This Month</option>
             <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
           </select>

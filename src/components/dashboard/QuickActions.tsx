@@ -81,24 +81,24 @@ export function QuickActions({ actions }: QuickActionsProps) {
           {actions.slice(0, 4).map((action) => {
             const Icon = actionIcons[action.label] || action.icon;
             const isPrimary = action.variant === "primary";
-            const isGhost = action.variant === "ghost";
             return (
               <a
                 key={action.label}
                 href={action.href}
                 className={cn(
-                  "relative p-4 rounded-xl transition-all duration-200 border",
+                  "relative p-4 rounded-xl transition-all duration-200 border group",
                   isPrimary
                     ? "bg-primary-light border-primary/30 hover:bg-primary/10 hover:border-primary/50"
-                    : isGhost
-                    ? "bg-transparent border-slate-200 hover:bg-slate-50 hover:border-slate-300"
                     : "bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300"
                 )}
               >
-                <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center mb-3", isPrimary ? "bg-primary text-white" : isGhost ? "bg-white text-slate-500 border border-slate-200" : "bg-white text-slate-600 border border-slate-200")}>
-                  {Icon}
+                <div className="flex items-center justify-between">
+                  <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", isPrimary ? "bg-primary text-white" : "bg-white text-slate-600 border border-slate-200")}>
+                    {Icon}
+                  </div>
+                  <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-slate-200 group-hover:bg-slate-300 transition-colors" />
                 </div>
-                <p className={cn("text-sm font-medium", isPrimary ? "text-primary" : isGhost ? "text-slate-500" : "text-slate-700")}>
+                <p className={cn("text-sm font-medium mt-3", isPrimary ? "text-primary" : "text-slate-700")}>
                   {action.label}
                 </p>
               </a>

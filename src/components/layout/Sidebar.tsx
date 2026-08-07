@@ -137,13 +137,7 @@ export function Sidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => v
           {/* Logo/Brand */}
           <div className="flex items-center justify-between h-16 px-4 border-b border-slate-200">
             <Link href="/dashboard" className="flex items-center gap-3" aria-label="Mobizilla Home">
-              <div className="relative w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center">
-                <svg className="w-5 h-5 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m-16.5 0a2.25 2.25 0 012.25-2.25H19.5A2.25 2.25 0 0121.75 5.25V12m-18 0v4.5m0 0H6.75m13.5-4.5H18a2.25 2.25 0 00-2.25 2.25v3.375m-1.5 3.75h.008v.008H12v-.008h-.008V16.5h-.008v-.008H8.25v.008H8.242v.008H5.25" />
-                </svg>
-                {/* Quarry block accent */}
-                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-slate-200 border border-slate-300 rounded-sm rotate-3" />
-              </div>
+              <img src="/logo.svg" alt="Mobizilla" className="w-9 h-9" />
               <span className="font-semibold text-lg text-slate-900 tracking-tight">Mobizilla</span>
             </Link>
             <button

@@ -31,7 +31,7 @@ export function DashboardLayoutClient({ appUser, children }: DashboardLayoutClie
   return (
     <div className="min-h-screen bg-bg">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="lg:pl-[260px] min-h-screen flex flex-col">
+      <div className="lg:pl-[250px] min-h-screen flex flex-col">
         <DashboardHeader
           user={{ full_name: appUser.full_name, role: appUser.role }}
           onMenuClick={() => setSidebarOpen(true)}
